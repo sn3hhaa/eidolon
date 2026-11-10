@@ -1,0 +1,28 @@
+{
+  "name": "eidolon",
+  "version": "0.1.0",
+  "private": true,
+  "description": "EIDOLON — a dream that remembers you. A 90-second surreal cinematic film built with Three.js.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "stills": "node scripts/render.mjs --stills",
+    "render:preview": "node scripts/render.mjs --scale 0.5 --out output/preview.mp4",
+    "render:frames": "node scripts/render.mjs --frames-only",
+    "render": "node scripts/render.mjs --out output/eidolon.mp4",
+    "encode": "node scripts/render.mjs --encode-only --out output/eidolon.mp4",
+    "smoke": "node scripts/smoke.mjs"
+  },
+  "dependencies": {
+    "gsap": "^3.15.1",
+    "three": "^0.187.0"
+  },
+  "devDependencies": {
+    "@types/three": "^0.187.0",
+    "playwright": "^1.65.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.7"
+  }
+}

@@ -1,0 +1,19 @@
+# dependencies / build
+node_modules/
+dist/
+.vite/
+
+# generated film output (frame sequences, video exports, stills)
+output/
+
+# Third-party reference artwork. These images are used locally as art-direction
+# reference only. Their redistribution rights are unverified, so they are NOT
+# committed. See docs/ASSET_CREDITS.md.
+references/
+
+# misc
+*.log
+.DS_Store
+Thumbs.db
+.env
+.env.*
