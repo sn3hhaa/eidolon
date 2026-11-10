@@ -2,46 +2,17 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>EIDOLON</title>
-    <link rel="icon" href="data:," />
+    <title>EIDOLON — The Museum of Impossible Things</title>
     <style>
-      :root { color-scheme: dark; }
-      * { box-sizing: border-box; }
-      html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
-      body { font: 12px/1.3 ui-monospace, 'Cascadia Mono', Consolas, monospace; color: #cfd3dc; }
-
-      /* --- the film itself: a bare canvas, nothing else --- */
-      #stage { position: fixed; inset: 0 0 64px 0; display: grid; place-items: center; background: #050506; }
-      #film { width: 100%; height: 100%; object-fit: contain; display: block; }
-      body.film-mode #stage { inset: 0; display: block; background: #000; }
-      body.film-mode #film { width: auto; height: auto; object-fit: none; }
-      body.film-mode #dev { display: none; }
-
-      /* --- development controls (never part of the rendered film) --- */
-      #dev { position: fixed; left: 0; right: 0; bottom: 0; height: 64px; padding: 6px 12px;
-             background: #0d0e12; border-top: 1px solid #23252d; display: grid;
-             grid-template-rows: 22px 26px; gap: 4px; user-select: none; }
-      #dev .row { display: flex; align-items: center; gap: 10px; min-width: 0; }
-      #dev button, #dev select { font: inherit; color: inherit; background: #1a1c23; border: 1px solid #2c2f3a;
-             border-radius: 4px; padding: 3px 9px; cursor: pointer; }
-      #dev button:hover, #dev select:hover { background: #242732; }
-      #dev label { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
-      #dev .scrub { position: relative; flex: 1; height: 22px; }
-      #dev .scrub input { position: absolute; inset: 0; width: 100%; margin: 0; background: transparent; }
-      #dev .ticks { position: absolute; inset: 0; pointer-events: none; }
-      #dev .ticks i { position: absolute; top: 0; bottom: 0; border-left: 1px solid #3a3e4c; padding-left: 3px;
-             font-style: normal; font-size: 9px; color: #6d7386; white-space: nowrap; overflow: hidden; }
-      #dev .ticks i.pending { color: #5a4a2a; }
-      #dev .readout { min-width: 330px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-      #dev .pending-badge { color: #ffb347; }
-      #dev .spacer { flex: 1; }
-      #dev .dim { color: #6d7386; }
+      html, body { margin: 0; height: 100%; background: #000; overflow: hidden; font: 12px ui-monospace, monospace; color: #cbb; }
+      #c { position: absolute; inset: 0; margin: auto; max-width: 100vw; max-height: 100vh; aspect-ratio: 16/9; width: 100vw; height: auto; }
+      #ui { position: absolute; left: 0; right: 0; bottom: 0; display: flex; gap: 8px; padding: 6px 10px; background: #0008; }
+      #bar { flex: 1; }
     </style>
   </head>
   <body>
-    <div id="stage"><canvas id="film"></canvas></div>
-    <div id="dev"></div>
+    <canvas id="c"></canvas>
+    <div id="ui"><input id="bar" type="range" min="0" max="90" step="0.0333" value="0" /><span id="lab"></span></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

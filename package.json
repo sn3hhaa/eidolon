@@ -1,22 +1,18 @@
 {
   "name": "eidolon",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
-  "description": "EIDOLON — a dream that remembers you. A 90-second surreal cinematic film built with Three.js.",
+  "description": "EIDOLON — The Museum of Impossible Things. A 90-second surreal film made entirely with procedural Three.js.",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
     "stills": "node scripts/render.mjs --stills",
-    "render:preview": "node scripts/render.mjs --scale 0.5 --out output/preview.mp4",
-    "render:frames": "node scripts/render.mjs --frames-only",
-    "render": "node scripts/render.mjs --out output/eidolon.mp4",
-    "encode": "node scripts/render.mjs --encode-only --out output/eidolon.mp4",
-    "smoke": "node scripts/smoke.mjs"
+    "render:preview": "node scripts/render.mjs --scale 0.5 --step 2 --out output/eidolon_preview.mp4",
+    "render": "node scripts/render.mjs --out output/eidolon_final.mp4",
+    "contact": "node scripts/contact.mjs"
   },
   "dependencies": {
-    "gsap": "^3.15.1",
     "three": "^0.187.0"
   },
   "devDependencies": {

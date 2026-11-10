@@ -1,61 +1,64 @@
-import { DevUI } from './dev/DevUI';
-import { Film } from './engine/Film';
-import { FILM } from './film';
+import * as THREE from 'three';
+import { Film, FPS, DURATION, TOTAL_FRAMES, TL } from './engine/film';
 
-/**
- * URL parameters
- *   ?film=1     film mode: bare canvas at exact render resolution, no dev UI
- *   &scale=0.5  internal resolution scale (default 1 in film mode, 0.5 in dev)
- *   &t=4.2      initial time in seconds (dev mode)
- */
-const params = new URLSearchParams(location.search);
-const filmMode = params.has('film');
-const scale = Number(params.get('scale') ?? (filmMode ? 1 : 0.5));
-const startTime = Number(params.get('t') ?? 0);
+const q = new URLSearchParams(location.search);
+const filmMode = q.has('film');
+const scale = Number(q.get('scale') ?? (filmMode ? 1 : 0.5));
+const only = q.get('only')?.split(',');
+const W = Math.round(1920 * scale), H = Math.round(1080 * scale);
 
-const canvas = document.getElementById('film') as HTMLCanvasElement;
-const film = new Film(canvas, FILM, scale);
+const canvas = document.getElementById('c') as HTMLCanvasElement;
+canvas.width = W; canvas.height = H;
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: false, powerPreference: 'high-performance', preserveDrawingBuffer: true });
+renderer.setPixelRatio(1);
+renderer.setSize(W, H, false);
+renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
+renderer.toneMapping = THREE.NoToneMapping;
+renderer.autoClear = true;
 
-const errors: string[] = [];
+const film = new Film(renderer, W, H);
+const errors: string[] = film.errors;
 window.addEventListener('error', (e) => errors.push(String(e.message)));
 window.addEventListener('unhandledrejection', (e) => errors.push(String(e.reason)));
-canvas.addEventListener('webglcontextlost', () => errors.push('WebGL context lost'));
 
-const ready = film.init().then(() => {
-  if (filmMode) {
-    document.body.classList.add('film-mode');
-    film.renderFrame(0);
-  } else {
-    new DevUI(film, document.getElementById('dev')!, startTime);
-  }
-  return true;
-});
-
-/** Automation API used by scripts/render.mjs (Playwright). */
 const api = {
-  ready,
-  errors,
-  fps: film.fps,
-  duration: film.duration,
-  totalFrames: film.totalFrames,
-  size: () => ({ width: film.width, height: film.height }),
-  scenes: () => film.segments.map((s) => ({ id: s.id, title: s.title, start: s.start, end: s.end, built: s.scene.built })),
+  fps: FPS, duration: DURATION, totalFrames: TOTAL_FRAMES, errors, timeline: TL,
+  ready: film.load(only).then(() => true),
+  built: () => [...film.built.keys()],
   gpu: () => {
-    const gl = film.renderer.getContext();
-    const ext = gl.getExtension('WEBGL_debug_renderer_info');
-    return ext ? String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)) : 'unknown';
+    const gl = renderer.getContext(); const ext = gl.getExtension('WEBGL_debug_renderer_info');
+    return ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : 'unknown';
   },
-  renderFrame: (frame: number) => film.renderFrame(frame),
-  /** Render frame n and return it as a data URL (PNG by default). */
-  captureFrame: (frame: number, mime = 'image/png', quality?: number) => {
-    film.renderFrame(frame);
-    return canvas.toDataURL(mime, quality);
+  renderAt(t: number) { film.render(t); },
+  capture(t: number, type = 'image/png', quality = 0.92) {
+    film.render(t);
+    return canvas.toDataURL(type, quality);
   },
 };
+(window as any).__eidolon = api;
 
-declare global {
-  interface Window {
-    __eidolon: typeof api;
-  }
+if (!filmMode) {
+  // minimal preview transport
+  const bar = document.getElementById('bar') as HTMLInputElement;
+  const lab = document.getElementById('lab')!;
+  let t = Number(q.get('t') ?? 0), playing = !q.has('t'), last = performance.now();
+  bar.max = String(DURATION);
+  bar.addEventListener('input', () => { t = Number(bar.value); playing = false; });
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') playing = !playing;
+    if (e.code === 'ArrowRight') { t += e.shiftKey ? 1 : 1 / FPS; playing = false; }
+    if (e.code === 'ArrowLeft') { t -= e.shiftKey ? 1 : 1 / FPS; playing = false; }
+  });
+  api.ready.then(() => {
+    const loop = (now: number) => {
+      if (playing) t += (now - last) / 1000;
+      last = now;
+      if (t >= DURATION) t = 0;
+      if (t < 0) t = 0;
+      film.render(t);
+      bar.value = String(t); lab.textContent = `${t.toFixed(2)}s  f${Math.floor(t * FPS)}  ${errors.length ? 'ERR ' + errors[0] : ''}`;
+      requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+  });
 }
-window.__eidolon = api;
