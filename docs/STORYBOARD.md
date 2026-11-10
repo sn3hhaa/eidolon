@@ -36,7 +36,7 @@ entries below are the plan, not a description of existing footage.
 | 0.6–4.5 | A seed star appears as a four-point glint. A sphere of light expands from it: cross-shaped sparkles switch on as it passes, and the rims of painted navy fragments emerge from the black — first slate and cream, moonlit. | Slow dolly forward on a gentle S-curve, roll easing to −2°. Floating drift. |
 | 4.5–4.95 | The light draws breath: dims and contracts. | Continues. |
 | 4.95–6.9 | Ignition. ~560 needles in four angular layers plus 300 true-3D rays and 170 loose dashes shoot out; a thin broken shock ring races off; 2,600 embers are thrown on decelerating paths; fragments recoil outward and their rims turn gold and burnt orange on the side facing the burst. | Dolly continues; lens opens 38°→40°. |
-| 6.9–10.0 | The dive. The camera accelerates toward the core; needles stretch (warp). From 8.5 s the burst collapses — rays fade, the core swells and its surface resolves into a moon with grey maria. | Ease-in (power2) down the axis to z=2.6, lens 40°→62°, roll to +9°. |
+| 6.9–10.0 | The dive. The camera accelerates toward the core; needles stretch (warp). From 8.25 s the burst collapses — rays fade, the core swells, cools, and by 9.4 s its surface has resolved into a moon with grey maria. | Accelerates (power2 in) to peak speed at 8.6 s, then decelerates (power2 out) to settle at z=2.6; lens 40°→62°, roll to +9°. |
 
 **Environment animation.** Fragments drift and slowly rotate; needles flicker and
 the four ray layers counter-rotate; sparkles twinkle; dust drifts; embers decelerate
