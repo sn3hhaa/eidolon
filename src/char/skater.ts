@@ -8,7 +8,7 @@ import * as THREE from 'three';
 import type { Protagonist } from './wardrobe';
 import { SKATE_DROP, WHEEL_R } from './skates';
 
-/** foot = [x, y, z, yaw, pitch, roll] of the skate's wheel-contact centre; hand = [x, y, z, mode] (mode 0: offset from the shoulder, 1: root-frame point, 2: world point) */
+/** foot = [x, y, z, yaw, pitch, roll] of the skate's wheel-contact centre; hand = [x, y, z, mode] (mode 0: offset from the shoulder, 1: root-frame point, 2: world point, 3: offset from the head bone in the head's own axes) */
 export interface SkPose { hip: number[]; hipRot: number[]; spine: number[]; head: number[]; fL: number[]; fR: number[]; hL: number[]; hR: number[]; curl: number[]; elbow?: number[]; /** palm normals in the root frame (optional; default: palms turn toward the body) */ palmL?: number[]; palmR?: number[]; /** [left, right] > 0: index finger stays straight (pointing / balancing a ball) */ point?: number[] }
 const KEYS = ['hip', 'hipRot', 'spine', 'head', 'fL', 'fR', 'hL', 'hR', 'curl'] as const;
 const TAU = Math.PI * 2;
@@ -106,7 +106,8 @@ export function applyPose(P: Protagonist, root: Root, pose: SkPose, dist = 0) {
     const pole = new THREE.Vector3(s * 0.12, 0, 1).applyQuaternion(fq).applyQuaternion(rq);
     a.legIK(side, ankle, pole, _q.copy(rq).multiply(fq).clone());
   }
-  const hand = (side: 'left' | 'right', h: number[]) => { const t = new THREE.Vector3(h[0], h[1], h[2]); if (h[3] === 2) return t; if (h[3] === 1) return R.localToWorld(t); return t.applyQuaternion(rq).add(a.worldPos(`${side}UpperArm`, _v)); };
+  const hand = (side: 'left' | 'right', h: number[]) => { const t = new THREE.Vector3(h[0], h[1], h[2]); if (h[3] === 2) return t; if (h[3] === 1) return R.localToWorld(t);
+    if (h[3] === 3) { const hq = a.nb.head.getWorldQuaternion(new THREE.Quaternion()).multiply(a.restQ.clone().invert()); return t.applyQuaternion(hq).add(a.worldPos('head', _v)); } return t.applyQuaternion(rq).add(a.worldPos(`${side}UpperArm`, _v)); };
   // torso frame for keeping hands outside the body and jacket
   const inv = a.restQ.clone().invert(), cq = a.nb.upperChest.getWorldQuaternion(new THREE.Quaternion()).multiply(inv);
   const cx = new THREE.Vector3(1, 0, 0).applyQuaternion(cq), cz = new THREE.Vector3(0, 0, 1).applyQuaternion(cq), cy = new THREE.Vector3(0, 1, 0).applyQuaternion(cq);
@@ -120,7 +121,7 @@ export function applyPose(P: Protagonist, root: Root, pose: SkPose, dist = 0) {
   };
   for (const [side, h, hb, s, palm] of [['left', pose.hL, (pose as any).hLb, 1, pose.palmL], ['right', pose.hR, (pose as any).hRb, -1, pose.palmR]] as const) {
     const t = hand(side, h); if (hb) { const w = sstep(0, 1, hb[1]); t.lerp(hand(side, hb[0]), w); t.addScaledVector(cz, 0.26 * Math.sin(Math.PI * w)).addScaledVector(cx, s * 0.05 * Math.sin(Math.PI * w)); }   // hands travel round the front of the body, never behind the shoulders
-    if (h[3] !== 2) clear(t, s);
+    if (h[3] !== 2 && h[3] !== 3) clear(t, s);
     const e = pose.elbow ?? [0.8, -0.5, -0.38];
     a.armIK(side, t, _v.set(s * e[0], e[1], e[2]).applyQuaternion(rq).clone());
     // wrist: fingers continue the forearm, palm turned toward the body (or down when the arm is out wide); the forearm takes the twist

@@ -16,8 +16,8 @@ export interface Perf {
   wheelL?: number;
 }
 export const EAST = Math.PI / 2;
-/** ear-level hand target in the root frame (standing) */
-export const EAR = (s: number, dy = 0): number[] => [s * 0.142, 1.35 + SKATE_LIFT + dy, 0.045, 1];
+/** hand on a headphone cup: offset from the head bone, in the head's axes */
+export const EAR = (s: number, dy = 0): number[] => [s * 0.118, 0.07 + dy, 0.035, 3];
 /** Expression presets, calibrated on the avatar: 'relaxed' is the open-eyed smile, 'happy' at 1 the eyes-shut laugh (partial 'happy' reads sleepy, 'angry' draws a forehead shadow — both avoided). */
 export const FACE = {
   neutral: {} as Face, focus: {} as Face, smile: { relaxed: 0.6 } as Face, grin: { relaxed: 1, ee: 0.25 } as Face,

@@ -78,14 +78,14 @@ export async function build(q: URLSearchParams): Promise<Production & { debug?: 
       }
       // opening title: letters slam in one by one with an overshoot, hold, then whip out to the left
       if (t >= 0.6 && t < 3.9) {
-        const txt = 'FABLE 5.2', px = 270, out = sstep(3.45, 3.85, t); g.font = heavy(px);
-        let x = 86 - out * out * 1700;
+        const txt = 'FABLE 5.2', px = 210, out = sstep(3.45, 3.85, t), BY = 985; g.font = heavy(px);
+        const X0 = 1920 - 80 - g.measureText(txt).width; let x = X0 + out * out * 1700;   // bottom-right corner, exits to the right
         for (let i = 0; i < txt.length; i++) {
           const w = g.measureText(txt[i]).width, u = (t - 0.65 - i * 0.06) / 0.2;
-          if (u > 0) { const e = u >= 1 ? 1 : 1 - Math.pow(1 - u, 3), sc = u >= 1 ? 1 : 0.2 + e * 0.8 + Math.sin(u * Math.PI) * 0.4, dy = (1 - e) * -180; g.save(); g.translate(x + w / 2, 330 + dy); g.scale(sc, sc); g.rotate((1 - e) * -0.25); g.globalAlpha = Math.min(1, u * 3) * (1 - out); put(txt[i], -w / 2, 0, px); g.restore(); }
+          if (u > 0) { const e = u >= 1 ? 1 : 1 - Math.pow(1 - u, 3), sc = u >= 1 ? 1 : 0.2 + e * 0.8 + Math.sin(u * Math.PI) * 0.4, dy = (1 - e) * -180; g.save(); g.translate(x + w / 2, BY + dy); g.scale(sc, sc); g.rotate((1 - e) * -0.25); g.globalAlpha = Math.min(1, u * 3) * (1 - out); put(txt[i], -w / 2, 0, px); g.restore(); }
           x += w;
         }
-        const ul = sstep(1.25, 1.6, t) * (1 - out); if (ul > 0) { g.globalAlpha = 1 - out; g.fillStyle = '#ff7a1a'; g.fillRect(92 - out * out * 1700, 362, 900 * ul, 16); g.globalAlpha = 1; }
+        const ul = sstep(1.25, 1.6, t) * (1 - out); if (ul > 0) { g.globalAlpha = 1 - out; g.fillStyle = '#ff7a1a'; g.fillRect(X0 + 4 + out * out * 1700, BY + 24, (1920 - 84 - X0) * ul, 13); g.globalAlpha = 1; }
         drawn = 1;
       }
       return drawn;
