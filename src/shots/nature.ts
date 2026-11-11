@@ -5,24 +5,25 @@ import { makeBird, makeBasketball, makeOrange, makeCrate, makeLeaf, makeFrisbee,
 import { CURB, L } from '../world/layout';
 import { hash, G, arc } from './util';
 import { twAt } from './traffic';
-import { BALL, C, E, F } from './perform';
+import { C, E, F, BALLT, LOOKB } from './perform';
 
 const _m = new THREE.Matrix4(), _p = new THREE.Vector3(), _q = new THREE.Quaternion(), _s = new THREE.Vector3(), _e = new THREE.Euler();
 
 export function buildNature() {
   const group = new THREE.Group();
   // ── splash-pad droplets: every jet's arc is permanently filled, so freezing tw leaves the water hanging
-  const jets = L.splash.jets, PER = 64, MIST = 260, ND = jets.length * PER + MIST;
-  const drops = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 2), toon('#7fd0ff'), ND), glints = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 1), flat('#ffffff'), ND);
+  const jets = L.splash.jets, PER = 120, MIST = 520, ND = jets.length * PER + MIST;
+  const drops = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 2), flat('#bfe9ff'), ND), glints = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 1), flat('#ffffff'), ND);
   drops.frustumCulled = glints.frustumCulled = false; drops.castShadow = true; group.add(drops, glints);
   const dropAt = (i: number, tw: number, out: THREE.Vector3) => {
-    if (i >= jets.length * PER) { const k = i - jets.length * PER, a = hash(k * 1.7) * 6.283, r = Math.sqrt(hash(k * 2.9)) * 4.6, h = 2.9; out.set(L.splash.pad.x + Math.cos(a) * r, CURB + 0.05 + (((hash(k * 4.3) * h - tw * (0.5 + hash(k) * 0.4)) % h) + h) % h, L.splash.pad.z + Math.sin(a) * r); return 0.011 + 0.012 * hash(k * 7.7); }
-    const j = Math.floor(i / PER), k = i % PER, [jx, jz] = jets[j], T0 = 1.26, u = (((tw / T0 + k / PER + hash(j) * 0.37) % 1) + 1) % 1, born = tw - u * T0;
-    const v = 6.2 * (0.8 + 0.2 * Math.sin(born * 1.4 + j * 1.9)), age = u * T0, ox = jx - L.splash.pad.x, oz = jz - L.splash.pad.z, ol = Math.hypot(ox, oz) || 1, lean = 0.55 + 0.5 * hash(k * 3.3 + j);
-    const y = v * age - 0.5 * G * age * age; out.set(jx + (ox / ol) * lean * age + (hash(k * 5.1 + j) - 0.5) * 0.16 * age, CURB + 0.04 + Math.max(0, y), jz + (oz / ol) * lean * age + (hash(k * 9.7 + j) - 0.5) * 0.16 * age);
-    return y < 0 ? 0 : 0.02 + 0.024 * hash(k * 6.1 + j * 3.3);
+    if (i >= jets.length * PER) { const k = i - jets.length * PER, a = hash(k * 1.7) * 6.283, r = Math.sqrt(hash(k * 2.9)) * 4.6, h = 2.9; out.set(L.splash.pad.x + Math.cos(a) * r, CURB + 0.05 + (((hash(k * 4.3) * h - tw * (0.5 + hash(k) * 0.4)) % h) + h) % h, L.splash.pad.z + Math.sin(a) * r); return 0.006 + 0.008 * hash(k * 7.7); }
+    const j = Math.floor(i / PER), k = i % PER, [jx, jz] = jets[j], T0 = 1.26, u = (((tw / T0 + k / PER + hash(k * 12.7 + j) * 0.6) % 1) + 1) % 1, born = tw - u * T0;
+    const v = 6.2 * (0.8 + 0.2 * Math.sin(born * 1.4 + j * 1.9)), age = u * T0, ox = jx - L.splash.pad.x, oz = jz - L.splash.pad.z, ol = Math.hypot(ox, oz) || 1, lean = 0.3 + 0.9 * hash(k * 3.3 + j);
+    const y = v * age - 0.5 * G * age * age; out.set(jx + (ox / ol) * lean * age + (hash(k * 5.1 + j) - 0.5) * 0.5 * age, CURB + 0.04 + Math.max(0, y), jz + (oz / ol) * lean * age + (hash(k * 9.7 + j) - 0.5) * 0.5 * age);
+    return y < 0 ? 0 : 0.011 + 0.017 * hash(k * 6.1 + j * 3.3);
   };
   // ── the basketball
+  const BALL = new THREE.Vector3(-11.0, 1.6, 5.15);
   const ball = makeBasketball(); ball.castShadow = true; group.add(ball);
   const V0 = new THREE.Vector3(1.82, -3.51, -3.9), REL = -0.55, HAND = new THREE.Vector3(-12.0, 2.05, 7.3), FLOOR = CURB + 0.12;
   const VP = new THREE.Vector3(-0.25, -3.51, 0.9), tB = (-3.51 + Math.sqrt(3.51 * 3.51 + 2 * G * (BALL.y - FLOOR))) / G, PB = new THREE.Vector3(BALL.x + VP.x * tB, FLOOR, BALL.z + VP.z * tB), VB = new THREE.Vector3(-1.02, 0.78 * (3.51 + G * tB), 1.98), tCatch = 0.8;
@@ -57,14 +58,16 @@ export function buildNature() {
   let key = '';
   return {
     group, ball, catchPoint: CATCH,
-    set(tw: number, sigma: number, tremble = 0, tf = 0, avoid?: THREE.Vector3) {
+    set(tw: number, sigma: number, tremble = 0, tf = 0, avoid?: THREE.Vector3, tip?: THREE.Vector3) {
       const jit = (i: number, a: number) => a * tremble * Math.sin(tf * 67 + i * 1.7) * Math.sin(tf * 41 + i * 0.9);
-      // the owner dribbles; at σ≈20 the ball gets away toward her, she taps it back with a fingertip, he catches it and carries on
-      { const T0 = 19.9, T1 = 20.6, T2 = 21.4, drib = (s: number) => HOME.clone().setY(FLOOR + 0.02 + 0.8 * Math.abs(Math.sin(s * 5.2)));
-        if (sigma > T0 && sigma < T1) { const a = drib(T0), k2 = (sigma - T0) / (T1 - T0); ball.position.lerpVectors(a, BALL, k2).setY(arc(sigma, T0, T1, a.y, BALL.y)); }
-        else if (sigma >= T1 && sigma < T2) { const b = drib(T2), k2 = (sigma - T1) / (T2 - T1); ball.position.lerpVectors(BALL, b, k2).setY(arc(sigma, T1, T2, BALL.y, b.y)); }
-        else ball.position.copy(drib(sigma)); }
-      ball.rotation.set(sigma * 6, sigma * 1.3, 0.3);
+      // the owner dribbles; the ball gets away, she catches it on a fingertip, spins it, flicks it back
+      { const B = BALLT, drib = (s: number) => HOME.clone().setY(FLOOR + 0.02 + 0.8 * Math.abs(Math.sin(s * 5.2))), T = tip ?? BALL;
+        if (sigma > B.leave && sigma < B.on) { const a = drib(B.leave), k2 = (sigma - B.leave) / (B.on - B.leave); ball.position.lerpVectors(a, T, k2).setY(arc(sigma, B.leave, B.on, a.y, T.y)); }
+        else if (sigma >= B.on && sigma < B.flick) ball.position.copy(T);
+        else if (sigma >= B.flick && sigma < B.home) { const b = drib(B.home), k2 = (sigma - B.flick) / (B.home - B.flick); ball.position.lerpVectors(T, b, k2).setY(arc(sigma, B.flick, B.home, T.y, b.y)); }
+        else ball.position.copy(drib(sigma));
+        LOOKB.copy(ball.position);
+        if (sigma >= B.on && sigma < B.flick) { ball.rotation.set(0.12, sigma * 19, 0.1); } else       ball.rotation.set(sigma * 6, sigma * 1.3, 0.3); }
       const k = `${tw.toFixed(4)}|${tremble > 0 ? tf.toFixed(4) : ''}|${avoid ? Math.round(avoid.x * 5) + ',' + Math.round(avoid.y * 5) + ',' + Math.round(avoid.z * 5) : ''}`; if (k === key) return; key = k;
       for (let i = 0; i < ND; i++) { const r = dropAt(i, tw, _p); _p.x += jit(i, 0.012); _p.y += jit(i + 7, 0.012); _m.compose(_p, _q.identity(), _s.set(r, r * 1.25, r)); drops.setMatrixAt(i, _m); _p.x += r * 0.42; _p.y += r * 0.55; _p.z += r * 0.2; _m.compose(_p, _q, _s.setScalar(r * 0.36)); glints.setMatrixAt(i, _m); }
       drops.instanceMatrix.needsUpdate = glints.instanceMatrix.needsUpdate = true;

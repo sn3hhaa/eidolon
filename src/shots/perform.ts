@@ -60,20 +60,26 @@ function segA(s: number): Perf {
 // ───────────────────────────── B: the suspended basketball
 const B0 = pathA.at(vA(A.stop)), B1 = new THREE.Vector2(BALL.x - 0.3, BALL.z - 0.37);
 /** radians the ball has turned (she nudges it at σ = 20.6) and its tiny drift */
-export const ballSpin = (s: number) => (s < 20.6 ? 0 : 0.85 * (1 - Math.exp(-(s - 20.6) / 0.7)));
+
+export const BALLT = { leave: 19.9, on: 20.6, flick: 22.15, home: 22.9 };
+const KID = new THREE.Vector3(-12.0, 1.2, 7.4);
 function segB(s: number): Perf {
-  const k = sstep(17.7, 19.5, s), p = B0.clone().lerp(B1, k), faceBall = Math.atan2(BALL.x - B1.x, BALL.z - B1.y);
-  const yaw = lerp(EAST, faceBall, sstep(17.5, 19.3, s)) + (s > 22 ? lerp(0, EAST - faceBall, sstep(22.2, 23.4, s)) : 0);
-  let pose = POSE.stand(); pose.hip = [0.02 * Math.sin(s * 1.3), -0.04 - 0.03 * k * (1 - k) * 4, 0]; pose.fL = [0.1, 0, 0.03 + 0.05 * k * (1 - k) * 4, 0.16, 0, 0];
-  const look = track([[15.6, 0.3], [16.3, -0.7], [17.0, -0.5], [17.4, 0.5]])(s);
-  if (s < 17.5) { pose.head = [0, look, 0]; pose.spine = [0.04, look * 0.4, 0]; }
-  const reach = sstep(19.5, 20.55, s) * (1 - sstep(21.0, 22.0, s)), poke = win(s, 20.5, 20.7, 0.08), rp = POSE.stand();
-  rp.hR = [BALL.x - 0.05, BALL.y - 0.09 - 0.02 * poke, BALL.z - 0.1, 2]; rp.curl = [0.35, 0.05]; rp.spine = [0.06, -0.12, 0]; rp.hip = [0, -0.02, 0.03]; rp.elbow = [0.5, -0.8, -0.2]; rp.palmR = [0, -1, 0.2];
-  pose = mix(pose, rp, reach); if (reach > 0.02) pose.elbow = rp.elbow;
-  pose = mix(pose, POSE.glide(0.7, -1), sstep(23.0, 23.5, s));
-  const face = s < 17.3 ? FACE.puzzled : s < 20.6 ? faceMix(FACE.puzzled, FACE.surprised, sstep(17.3, 17.8, s) * 0.6) : faceMix(FACE.surprised, FACE.mischief, sstep(21.1, 21.9, s));
-  return { root: { pos: new THREE.Vector3(p.x, 0, p.y), yaw }, pose, dist: vA(A.stop) + k * 0.5, speed: 0, face, hp: 1, look: s > 17.3 && s < 22.3 ? BALL : undefined, lookW: 0.75 };
+  const k = sstep(16.2, 18.2, s), p = B0.clone().lerp(B1, k), faceKid = Math.atan2(KID.x - B1.x, KID.z - B1.y) - 0.35;
+  const yaw = lerp(EAST, faceKid, sstep(16.0, 18.0, s)) + lerp(0, EAST - faceKid, sstep(23.0, 23.5, s));
+  const sway = Math.sin(s * 1.4);
+  // relaxed stance: weight on the left skate, right skate back on its toe wheel side, hips shifted
+  const base = POSE.stand(); base.fL = [0.11, 0, 0.07 + 0.05 * k * (1 - k) * 4, 0.3, 0, 0]; base.fR = [-0.1, 0, -0.07, -0.12, 0, 0]; base.hip = [0.035 + 0.01 * sway, -0.055, 0]; base.hipRot = [0, 0, 0.05]; base.spine = [0.03, 0.06, -0.05]; base.hL = [0.2, -0.36, 0.1, 0]; base.hR = [-0.19, -0.42, 0.06, 0];
+  // right hand up, index finger as a spindle
+  const up = sstep(BALLT.leave - 0.25, BALLT.on - 0.1, s) * (1 - sstep(BALLT.flick + 0.25, BALLT.home, s)), fl = win(s, BALLT.flick - 0.12, BALLT.flick + 0.1, 0.1), dip = win(s, BALLT.on - 0.02, BALLT.on + 0.12, 0.08);
+  const hold = POSE.stand(); Object.assign(hold, { fL: base.fL, fR: base.fR, hip: [0.04, -0.06 - 0.03 * dip, 0.01], hipRot: base.hipRot, spine: [0.0 - 0.06 * fl, -0.1 + 0.12 * fl, -0.04], hL: [0.24, -0.3, 0.12, 0] });
+  hold.hR = [-0.2 + 0.03 * fl, 0.03 - 0.05 * dip + 0.12 * fl, 0.27 + 0.1 * fl, 0]; hold.curl = [0.35, 0.95]; hold.elbow = [0.45, -1, 0.05]; hold.palmR = [0.3, 0, -1];
+  const pose = mix(mix(base, hold, up), POSE.glide(0.7, -1), sstep(23.05, 23.5, s)); if (up > 0.3) { pose.point = [0, 1]; pose.elbow = hold.elbow; pose.palmR = hold.palmR; }
+  const onTip = s > BALLT.on && s < BALLT.flick;
+  const face = s < BALLT.leave ? faceMix(FACE.neutral, FACE.smile, sstep(16.5, 17.5, s)) : s < BALLT.on ? FACE.surprised : onTip ? faceMix(FACE.surprised, FACE.grin, sstep(BALLT.on, BALLT.on + 0.45, s)) : faceMix(FACE.joy, FACE.mischief, sstep(BALLT.flick + 0.35, BALLT.home, s));
+  return { root: { pos: new THREE.Vector3(p.x, 0, p.y), yaw }, pose, dist: vA(A.stop) + k * 0.5, speed: 0, face, hp: 1, look: s > 16.3 && s < 23.0 ? LOOKB : undefined, lookW: 0.75 };
 }
+/** what she is watching during the ball beat (kept up to date by the stage: the ball itself) */
+export const LOOKB = new THREE.Vector3(-12, 1.2, 7.2);
 
 import { segC, segD, C, D, BUS, busRoofY } from './perform2';
 import { segE, segF, segG, E, F, Gs } from './perform3';

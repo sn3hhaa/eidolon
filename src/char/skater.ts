@@ -9,7 +9,7 @@ import type { Protagonist } from './wardrobe';
 import { SKATE_DROP, WHEEL_R } from './skates';
 
 /** foot = [x, y, z, yaw, pitch, roll] of the skate's wheel-contact centre; hand = [x, y, z, mode] (mode 0: offset from the shoulder, 1: root-frame point, 2: world point) */
-export interface SkPose { hip: number[]; hipRot: number[]; spine: number[]; head: number[]; fL: number[]; fR: number[]; hL: number[]; hR: number[]; curl: number[]; elbow?: number[]; /** palm normals in the root frame (optional; default: palms turn toward the body) */ palmL?: number[]; palmR?: number[] }
+export interface SkPose { hip: number[]; hipRot: number[]; spine: number[]; head: number[]; fL: number[]; fR: number[]; hL: number[]; hR: number[]; curl: number[]; elbow?: number[]; /** palm normals in the root frame (optional; default: palms turn toward the body) */ palmL?: number[]; palmR?: number[]; /** [left, right] > 0: index finger stays straight (pointing / balancing a ball) */ point?: number[] }
 const KEYS = ['hip', 'hipRot', 'spine', 'head', 'fL', 'fR', 'hL', 'hR', 'curl'] as const;
 const TAU = Math.PI * 2;
 export const sstep = (a: number, b: number, x: number) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
@@ -138,6 +138,7 @@ export function applyPose(P: Protagonist, root: Root, pose: SkPose, dist = 0) {
     a.setWorldQuat(Hd, Rw.multiply(a.restQ)); Hd.updateWorldMatrix(false, true);
   }
   a.fingers('left', pose.curl[0]); a.fingers('right', pose.curl[1]);
+  for (const [sd, on] of [['left', pose.point?.[0]], ['right', pose.point?.[1]]] as const) if (on) for (const p of ['Proximal', 'Intermediate', 'Distal']) a.nb[sd + 'Index' + p]?.quaternion.identity();
   const spin = dist / WHEEL_R;
   for (const w of P.skates.left.wheels) w.rotation.x = spin; for (const w of P.skates.right.wheels) w.rotation.x = spin;
 }

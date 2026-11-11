@@ -6,7 +6,7 @@ import { applyPose, blink } from '../char/skater';
 import { makeHeadphones, makeCrossbodyBag } from '../world/props';
 import { perform } from './perform';
 
-export interface Hero { P: Protagonist; root: THREE.Object3D; /** pose her for story time σ; returns the Perf used */ apply(s: number): ReturnType<typeof perform>; head(out?: THREE.Vector3): THREE.Vector3; chest(out?: THREE.Vector3): THREE.Vector3; bone(n: string, out?: THREE.Vector3): THREE.Vector3 }
+export interface Hero { P: Protagonist; root: THREE.Object3D; /** pose her for story time σ; returns the Perf used */ apply(s: number): ReturnType<typeof perform>; head(out?: THREE.Vector3): THREE.Vector3; chest(out?: THREE.Vector3): THREE.Vector3; bone(n: string, out?: THREE.Vector3): THREE.Vector3; /** where a ball balanced on her right index fingertip sits */ tip(out?: THREE.Vector3): THREE.Vector3 }
 
 export async function buildHero(): Promise<Hero> {
   const P = await buildProtagonist('/assets/cast/protagonist_base.vrm'), a = P.actor;
@@ -57,5 +57,6 @@ export async function buildHero(): Promise<Hero> {
     head: (out = new THREE.Vector3()) => a.raw.head.getWorldPosition(out).add(new THREE.Vector3(0, 0.09, 0)),
     chest: (out = new THREE.Vector3()) => a.raw.upperChest.getWorldPosition(out),
     bone: (n: string, out = new THREE.Vector3()) => a.raw[n].getWorldPosition(out),
+    tip: (out = new THREE.Vector3()) => { const w = a.raw.rightHand.getWorldPosition(new THREE.Vector3()), e = a.raw.rightLowerArm.getWorldPosition(new THREE.Vector3()); return out.copy(w).addScaledVector(w.clone().sub(e).normalize(), 0.165).add(new THREE.Vector3(0, 0.118, 0)); },
   };
 }

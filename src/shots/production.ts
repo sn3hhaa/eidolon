@@ -38,14 +38,14 @@ export async function build(q: URLSearchParams): Promise<Production & { debug?: 
   for (let i = 1; i < shots.length; i++) if (Math.abs(shots[i].t0 - shots[i - 1].t1) > 1e-6) throw new Error(`shot gap at ${shots[i].name}: ${shots[i - 1].t1} → ${shots[i].t0}`);
   const pulseO = new THREE.Vector3().copy(perform(A.freeze).root.pos).add(V(0, 1.0, 0));
   const tgt = new THREE.Vector3(), cam = S.camera, _d = new THREE.Vector3();
-  const only = q.get('only');
+  const only = q.get('only'); let spd = 0;
   return {
     scene: S.scene, camera: cam, look, shots,
     debug: `shots ${shots.length} · ${shots.map((s) => `${s.name}@${s.t0}`).join(' ')}`,
     update(t: number, sh: Shot) {
-      const d = sh as ShotDef, s = d.sig(t), pf = S.hero.apply(s);
+      const d = sh as ShotDef, s = d.sig(t), pf = S.hero.apply(s); spd = pf.speed;
       const tw = twOf(s), tr = 0;
-      S.traffic.set(tw, tr, t); S.nature.set(tw, s, tr, t, S.hero.head()); S.crowd.set(tw, S.hero.head(), reactOf(s));
+      S.traffic.set(tw, tr, t); S.nature.set(tw, s, tr, t, S.hero.head(), S.hero.tip()); S.crowd.set(tw, S.hero.head(), reactOf(s));
       S.ground.setTime(tw); S.buildings.setTime(tw);
       const ph = (((tw % 24) + 24) % 24), sg = ph < 10 ? (['g', 'r'] as const) : ph < 12 ? (['y', 'r'] as const) : ph < 22 ? (['r', 'g'] as const) : (['r', 'y'] as const); void hash; S.ground.setSignals(sg[0], sg[1]);
       look.freeze = 0; look.pulseR = -1; void pulseO; void freezeOf; void pulseOf; void trembleOf;
@@ -68,7 +68,27 @@ export async function build(q: URLSearchParams): Promise<Production & { debug?: 
       const YEL = '#f6d21c', heavy = (px: number) => `900 ${px}px Impact, "Arial Black", "Bahnschrift", sans-serif`;
       const put = (txt: string, x: number, y: number, px: number, col = YEL) => { g.font = heavy(px); g.fillStyle = 'rgba(10,12,30,0.55)'; g.fillText(txt, x + px * 0.035, y + px * 0.035); g.fillStyle = col; g.fillText(txt, x, y); };
       g.textAlign = 'left'; g.textBaseline = 'alphabetic';
-      if (t >= 0.7 && t < 3.6) { put('FABLE 5.2', 86, 330, 270); return 1; }
+      let drawn = 0;
+      // speed lines when she is really moving: streaks from the frame edges, re-drawn every other frame
+      const k = sstep(7.6, 9.8, spd);
+      if (k > 0.02) {
+        const fr = Math.floor(t * 15); g.lineCap = 'round';
+        for (let i = 0; i < 54; i++) { const a = hash(fr * 3.1 + i * 7.7) * Math.PI * 2, r0 = 1150 - hash(fr + i * 2.3) * 330 * k, r1 = r0 - (90 + hash(fr * 1.7 + i) * 300) * k, cx = 960 + Math.cos(a) * 1.0, cy = 540; g.strokeStyle = `rgba(255,255,255,${(0.16 + 0.3 * hash(i + fr * 0.9)) * k})`; g.lineWidth = 2 + 5 * hash(i * 1.9 + fr); g.beginPath(); g.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0 * 0.62); g.lineTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1 * 0.62); g.stroke(); }
+        drawn = 1;
+      }
+      // opening title: letters slam in one by one with an overshoot, hold, then whip out to the left
+      if (t >= 0.6 && t < 3.9) {
+        const txt = 'FABLE 5.2', px = 270, out = sstep(3.45, 3.85, t); g.font = heavy(px);
+        let x = 86 - out * out * 1700;
+        for (let i = 0; i < txt.length; i++) {
+          const w = g.measureText(txt[i]).width, u = (t - 0.65 - i * 0.06) / 0.2;
+          if (u > 0) { const e = u >= 1 ? 1 : 1 - Math.pow(1 - u, 3), sc = u >= 1 ? 1 : 0.2 + e * 0.8 + Math.sin(u * Math.PI) * 0.4, dy = (1 - e) * -180; g.save(); g.translate(x + w / 2, 330 + dy); g.scale(sc, sc); g.rotate((1 - e) * -0.25); g.globalAlpha = Math.min(1, u * 3) * (1 - out); put(txt[i], -w / 2, 0, px); g.restore(); }
+          x += w;
+        }
+        const ul = sstep(1.25, 1.6, t) * (1 - out); if (ul > 0) { g.globalAlpha = 1 - out; g.fillStyle = '#ff7a1a'; g.fillRect(92 - out * out * 1700, 362, 900 * ul, 16); g.globalAlpha = 1; }
+        drawn = 1;
+      }
+      return drawn;
       return 0;
     },
   };

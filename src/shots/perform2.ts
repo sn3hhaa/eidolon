@@ -25,17 +25,17 @@ export function segC(s: number): Perf {
   const d = Math.min(dC(s), C_STOP), v = dC.rate(s), hopT = 0.3, inHop = s > C.hop - hopT / 2 && s < C.hop + hopT / 2;
   const y = inHop ? arc(s, C.hop - hopT / 2, C.hop + hopT / 2, 0, CURB) : s < C.hop ? 0 : CURB;
   const root = rootOn(pathC, d, v, y), curv = Math.abs(pathC.curv(d));
-  const spin = sstep(C.spin - 0.75, C.spin + 0.75, s) * Math.PI * 2, back = sstep(C.back0 - 0.3, C.back0 + 0.25, s) - sstep(C.back1 - 0.3, C.back1 + 0.3, s), stop = sstep(tDec + 0.15, tDec + 1.2, s);
+  const spin = (sstep(C.pad - 0.55, C.pad + 0.75, s) + sstep(C.spin - 0.75, C.spin + 0.75, s)) * Math.PI * 2, back = sstep(C.back0 - 0.3, C.back0 + 0.25, s) - sstep(C.back1 - 0.3, C.back1 + 0.3, s), stop = sstep(tDec + 0.15, tDec + 1.2, s);
   root.spin = spin + back * Math.PI + stop * Math.PI; root.roll = (root.roll ?? 0) + 0.16 * stop * (1 - stop) * 4;
   const cad = integrate([[23.5, 1.1], [26, 1.15], [60, 1.15]], 0.5)(s), strideW = (1 - sstep(0.07, 0.16, curv)) * (1 - back) * (1 - stop);
   let pose: SkPose = mix(POSE.glide(0.3 + 0.25 * sstep(0.1, 0.25, curv), 1), POSE.stride(cad, 0.55), strideW);
   pose = mix(POSE.glide(0.7, -1), pose, sstep(23.5, 23.8, s));
   const duck = win(s, C.duck - 0.4, C.duck + 0.35, 0.3); if (duck > 0) { const dk = POSE.glide(1, 1); dk.hip = [0, -0.5, -0.1]; dk.spine = [0.95, 0, 0]; dk.head = [-0.95, 0.25, 0]; dk.hL = [0.22, -0.16, 0.24, 0]; dk.hR = [-0.24, -0.2, 0.12, 0]; pose = mix(pose, dk, duck); }
   const hk = win(s, C.hop - 0.3, C.hop + 0.26, 0.12); if (hk > 0) pose = mix(pose, seq([[C.hop - 0.34, POSE.glide(0.6, 1)], [C.hop - 0.17, mix(POSE.glide(0.6, 1), POSE.tuck(), 0.6)], [C.hop - 0.08, POSE.launch()], [C.hop + 0.04, POSE.air(0.6)], [C.hop + 0.16, POSE.reach()], [C.hop + 0.26, mix(POSE.glide(0.4, 1), POSE.land(), 0.45)]], s), hk);
-  const wide = Math.max(win(s, C.pad - 0.9, C.pad + 0.9, 0.5), back * 0.8); if (wide > 0) { const w = POSE.glide(0.12, 1); w.hL = [0.4, 0.06 + 0.05 * Math.sin(s * 3), 0.02, 0]; w.hR = [-0.4, 0.04 - 0.05 * Math.sin(s * 3), 0.02, 0]; w.curl = [0.05, 0.05]; w.head = [-0.28, back * 0.9, 0]; w.spine = [-0.02, back * 0.3, 0]; pose = mix(pose, w, wide); }
+  const wide = Math.max(win(s, C.pad - 0.9, C.pad + 0.9, 0.5), back * 0.8); if (wide > 0) { const w = POSE.glide(0.12, 1); w.hL = [0.36, 0.2 + 0.07 * Math.sin(s * 3), 0.12, 0]; w.hR = [-0.38, -0.08 - 0.07 * Math.sin(s * 3), 0.1, 0]; w.curl = [0.08, 0.08]; w.palmL = [0, 1, 0.25]; w.palmR = [0, 1, 0.25]; w.elbow = [0.6, -0.8, -0.1]; w.head = [-0.3 + 0.08 * Math.sin(s * 2.2), back * 0.9, 0.14 * Math.sin(s * 1.7)]; w.spine = [-0.04, back * 0.3 + 0.1 * Math.sin(s * 2), 0.1 * Math.sin(s * 1.7)]; w.hip = [0.03 * Math.sin(s * 2), -0.14, -0.01]; pose = mix(pose, w, wide); if (wide > 0.5) { pose.palmL = w.palmL; pose.palmR = w.palmR; pose.elbow = w.elbow; } }
   const sp = win(s, C.spin - 0.7, C.spin + 0.7, 0.25); if (sp > 0) { const p = POSE.glide(0.35, 1); p.hL = [0.1, -0.16, 0.26, 0]; p.hR = [-0.1, -0.2, 0.26, 0]; p.fL = [0.07, 0, 0.14, 0.5, 0, 0]; p.fR = [-0.07, 0, -0.14, 0.5, 0, 0]; pose = mix(pose, p, sp); }
   if (stop > 0) { const hs = POSE.glide(0.75, 1); hs.fL = [0.2, 0, 0.05, 0.1, 0, 0.25]; hs.fR = [-0.2, 0, 0, -0.1, 0, 0.25]; hs.hL = [0.34, -0.12, 0.1, 0]; hs.hR = [-0.34, -0.14, 0.02, 0]; pose = mix(pose, mix(hs, POSE.stand(), sstep(tDec + 1.0, tDec + 1.5, s)), sstep(tDec, tDec + 0.5, s)); }
-  const face = faceMix(faceMix(FACE.mischief, FACE.grin, sstep(25, 26.5, s)), FACE.joy, Math.max(wide, sp * 0.8));
+  const laugh = Math.max(win(s, C.pad - 0.2, C.pad + 0.5, 0.25), win(s, C.back0 + 0.7, C.back0 + 1.25, 0.2)); const face = faceMix(faceMix(faceMix(FACE.mischief, FACE.grin, sstep(25, 26.5, s)), { relaxed: 1, aa: 0.45 }, Math.max(wide, sp * 0.8)), FACE.joy, laugh > 0.5 ? 1 : 0);
   return { root, pose, dist: 49 + d, speed: v, face: s > tDec + 0.8 ? faceMix(face, FACE.surprised, sstep(tDec + 0.9, tDec + 1.4, s) * 0.5) : face, hp: 1 };
 }
 
