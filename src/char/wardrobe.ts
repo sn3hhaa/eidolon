@@ -17,7 +17,7 @@ const bump = (x: number, c: number, w: number) => Math.exp(-((x - c) * (x - c)) 
 const lin = (hex: string) => { const c = new THREE.Color(hex); return `vec3(${c.r.toFixed(4)},${c.g.toFixed(4)},${c.b.toFixed(4)})`; };
 export const PALETTE = { cobalt: '#1c4ed8', orange: '#ff7a1a', navy: '#16224f', cream: '#f1e6cb', creamDark: '#d9cba8' };
 
-const HEM = 0.8, CUFF = 0.49, NECK = 1.335, WAIST = 0.96, ANKLE = 0.17;
+const HEM = 0.865, CUFF = 0.49, NECK = 1.335, WAIST = 0.96, ANKLE = 0.24;   // jacket ends at the hip; trousers end above the boot cuff
 
 const JACKET_GLSL = `
 uniform sampler2D uArt;
@@ -31,11 +31,11 @@ vec3 garment(vec3 p){
   if (p.z > 0. && ax < .0065 && p.y < 1.36) c = crm * .82;                // zip
   if (p.z > 0. && ax > .095 && ax < .15 && abs(p.y - (.99 - (ax - .095) * .9)) < .004) c = nav; // pocket welts
   if (p.z < 0. && ax < .2) {                                              // back piece (painted art, see jacketArt)
-    vec2 uv = vec2((.19 - p.x) / .38, (p.y - .845) / .38);
+    vec2 uv = vec2((.18 - p.x) / .36, (p.y - .885) / .36);
     if (uv.x > 0. && uv.x < 1. && uv.y > 0. && uv.y < 1.) { vec4 art = texture2D(uArt, uv); c = mix(c, art.rgb, art.a); }
   }
   if (p.z > 0.) { float r = length(p.xy - vec2(.105, 1.25)); c = mix(c, crm, step(r, .034)); c = mix(c, org, step(r, .027)); c = mix(c, nav, step(r, .012)); }   // chest badge
-  if (p.y < ${(HEM + 0.002).toFixed(3)}) { c = nav; c = mix(c, org, step(.76, p.y) * step(p.y, .776)); }      // rib hem
+  if (p.y < ${(HEM + 0.002).toFixed(3)}) { c = nav; c = mix(c, org, step(${(HEM - 0.04).toFixed(3)}, p.y) * step(p.y, ${(HEM - 0.024).toFixed(3)})); }      // rib hem
   if (ax > ${(CUFF + 0.002).toFixed(3)}) { c = nav; c = mix(c, org, step(.512, ax) * step(ax, .524)); }       // rib cuffs
   if (p.y > ${(NECK + 0.004).toFixed(3)} && ax < .13) c = mix(cob, org, step(1.398, p.y));                    // collar, orange lip
   return c;
@@ -89,13 +89,13 @@ export async function buildProtagonist(file: string): Promise<Protagonist> {
     rebind: (bone) => (/Leg/.test(bone) ? 'Hips' : /Bust/.test(bone) ? 'UpperChest' : /Hand|Thumb|Index|Middle|Ring|Little/.test(bone) ? bone.slice(0, 2) + 'LowerArm' : null),
     smooth: 3,
     bands: [
-      { where: (c) => c.y < 0.9, axis: [0, -1, 0], rings: [[0.03, 1.0], [0.058, 0.975], [0.06, 0.9]] },
+      { where: (c) => c.y < 0.9, axis: [0, -1, 0], rings: [[0.025, 1.0], [0.045, 0.98], [0.047, 0.9]] },
       { where: (c) => c.x > 0.4, axis: [1, 0, 0], rings: [[0.014, 0.86], [0.05, 0.8], [0.052, 0.6]] },
       { where: (c) => c.x < -0.4, axis: [-1, 0, 0], rings: [[0.014, 0.86], [0.05, 0.8], [0.052, 0.6]] },
       { where: (c) => c.y > 1.3 && Math.abs(c.x) < 0.1, axis: [0, 1, 0], rings: [[0.028, 1.13], [0.07, 1.2], [0.074, 1.1], [0.03, 0.98]] },
     ],
   });
-  shellMesh(body, jacket, garmentMaterial(JACKET_GLSL, cloth, { uArt: { value: jacketArt() } }));
+  shellMesh(body, jacket, garmentMaterial(JACKET_GLSL, cloth, { uArt: { value: jacketArt() }, uBias: { value: 0.1 } }));
 
   const legAxis = (y: number, sx: number): [number, number] => (y > 0.518 ? [sx * lerp(0.057, 0.079, ss(0.518, 0.87, y)), lerp(-0.004, 0.002, ss(0.518, 0.87, y))] : [sx * lerp(0.046, 0.057, ss(0.103, 0.518, y)), lerp(-0.025, -0.004, ss(0.103, 0.518, y))]);
   const trousers = makeShell(body, {
@@ -104,7 +104,7 @@ export async function buildProtagonist(file: string): Promise<Protagonist> {
     shape: (p, n) => {
       p.addScaledVector(n, 0.012);
       const sx = p.x >= 0 ? 1 : -1, [axx, axz] = legAxis(p.y, sx), rx = p.x - axx, rz = p.z - axz, len = Math.hypot(rx, rz) || 1e-4;
-      const R = 0.1 + 0.016 * ss(0.56, 0.3, p.y) - 0.012 * ss(0.26, ANKLE, p.y) + 0.006 * Math.sin(p.y * 95) * bump(p.y, 0.25, 0.07) + 0.004 * Math.sin(p.y * 70 + Math.atan2(rz, rx) * 2) * bump(p.y, 0.5, 0.08);
+      const R = 0.1 + 0.016 * ss(0.56, 0.3, p.y) - 0.016 * ss(0.33, ANKLE, p.y) + 0.006 * Math.sin(p.y * 95) * bump(p.y, 0.31, 0.06) + 0.004 * Math.sin(p.y * 70 + Math.atan2(rz, rx) * 2) * bump(p.y, 0.5, 0.08);
       const lx = axx + (rx / len) * R, lz = axz + (rz / len) * R;
       const a = 0.178, b = 0.134, k = Math.hypot(p.x / a, p.z / b), f = k < 1 && k > 1e-4 ? 1 / k : 1, t = ss(0.8, 0.9, p.y);
       p.x = lerp(lx, p.x * f, t); p.z = lerp(lz, p.z * f, t);
@@ -112,7 +112,7 @@ export async function buildProtagonist(file: string): Promise<Protagonist> {
     loose: (p) => ss(0.62, ANKLE, p.y) * 0.4,
     smooth: 2,
     bands: [
-      { where: (c) => c.y < 0.3, axis: [0, -1, 0], rings: [[0.018, 0.97], [0.034, 0.86], [0.03, 0.55]] },
+      { where: (c) => c.y < 0.35, axis: [0, -1, 0], rings: [[0.014, 0.96], [0.026, 0.82], [0.02, 0.6]] },
       { where: (c) => c.y > 0.9, axis: [0, 1, 0], rings: [[0.0, 0.85]] },
     ],
   });

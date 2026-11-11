@@ -24,6 +24,7 @@ The protagonist is an unnamed girl. She has no name anywhere in the film, the co
 | Format | 1920×1080 · H.264 (yuv420p) |
 | Silent master | `output/fast_forward_final.mp4` |
 | With soundtrack | `output/fast_forward_final_with_music.mp4` (local only) |
+| Soundtrack + author mark | `output/fast_forward_final_with_music_watermark.mp4` (local only) |
 | Contact sheet | `output/fast_forward_contact_sheet.jpg` |
 
 ## What this experiment was

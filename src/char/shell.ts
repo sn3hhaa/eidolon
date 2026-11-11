@@ -102,8 +102,10 @@ export interface ClothUniforms { uLag: { value: THREE.Vector3 }; uFlutter: { val
 export function garmentMaterial(glsl: string, u: ClothUniforms, extra: Record<string, { value: unknown }> = {}) {
   const m = toon('#ffffff', { side: THREE.DoubleSide });
   m.onBeforeCompile = (sh) => {
-    Object.assign(sh.uniforms, u, extra);
-    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute vec3 aRest; attribute float aLoose; varying vec3 vRest; uniform vec3 uLag; uniform float uFlutter, uTime;')
+    Object.assign(sh.uniforms, { uBias: { value: 0 } }, u, extra);
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute vec3 aRest; attribute float aLoose; varying vec3 vRest; uniform vec3 uLag; uniform float uFlutter, uTime, uBias;')
+      // depth bias on the lower front of a garment: a raised thigh tucks under the hem instead of punching through it
+      .replace('#include <project_vertex>', '#include <project_vertex>\n{ float gb = uBias * smoothstep(1.04, 0.9, aRest.y) * smoothstep(-0.02, 0.06, aRest.z); if (gb > 0.) { vec4 sp = projectionMatrix * (mvPosition + vec4(0., 0., gb, 0.)); gl_Position.z = sp.z / sp.w * gl_Position.w; } }')
       .replace('#include <skinning_vertex>', '#include <skinning_vertex>\nvRest = aRest;\ntransformed += uLag * aLoose + objectNormal * (sin(dot(aRest, vec3(31., 47., 23.)) + uTime * 17.) + sin(aRest.y * 60. - uTime * 23.)) * uFlutter * aLoose;');
     sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vRest;\n' + glsl).replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.rgb = garment(vRest);');
   };

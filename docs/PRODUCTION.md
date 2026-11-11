@@ -112,11 +112,18 @@ low on the side she arrives from and high on the side she leaves. A debug pass
     old name removed from the repo and jacket. Parts of the docs above describe the earlier freeze
     design (the "three clocks" section: tw now simply equals σ plus a constant).
 
+14. **Later review rounds.** The basketball beat became a fingertip catch-and-spin; headphone hand
+    targets were anchored to the head with elbows out (a fixed-in-space target had folded the forearms
+    onto the upper arms whenever she crouched); the title moved to the bottom-right corner; the jacket
+    was shortened to hip length with a depth bias on its lower front so raised thighs tuck under the
+    hem instead of cutting through it; trouser hems were lifted clear of the boot cuffs. A soundtrack
+    supplied by the user is muxed locally and is not part of the repository.
+
 ## Known limitations (honest list)
 
 - Cloth is not simulated. Jacket and trousers get a velocity/acceleration "lag" term and a speed
-  flutter in the vertex shader; the hair is rigid on the head (no secondary motion). Deep crouches still let the
-  thighs push into the jacket hem.
+  flutter in the vertex shader; the hair is rigid on the head (no secondary motion). In deep crouches the thighs are hidden behind the
+  jacket hem by a depth bias, not by real cloth contact.
 - The crowd uses the sample avatars' own outfits, which are more costume-like than the protagonist's
   streetwear, and several pedestrians are instances of the same six models.
 - Pedestrian animation is library clips; only the head turn toward the landing is directed.
