@@ -36,7 +36,7 @@ function segA(s: number): Perf {
     st.fL = [0.1, 0, 0.05 + 0.075 * rock, 0.1, 0, 0]; st.hip = [-0.025, -0.035, -0.01]; st.hR = [0.1, -0.13, 0.2, 0]; st.curl = [0.35, 0.7]; st.elbow = [0.8, -0.6, -0.1]; wheelL = 0.075 * rock;
     const tug = win(s, 2.1, 3.2, 0.25); st.hR = [0.1 + 0.02 * tug, -0.13 - 0.07 * tug, 0.2, 0]; st.spine = [0.04, 0.06 * tug, 0]; st.head = [0.12 * tug, 0.1 * tug, 0];
     const up = win(s, 3.9, 4.95, 0.42), press = win(s, 4.2, 4.8, 0.12), ears = POSE.stand();
-    ears.hL = EAR(1, -0.01 * press); ears.hR = EAR(-1, -0.01 * press); ears.curl = [0.25, 0.25]; ears.head = [0.08 - 0.1 * press, 0.05 * Math.sin(s * 5) * press, 0.04 * press]; ears.spine = [0.02, 0, 0]; ears.elbow = [0.9, -0.5, 0.3]; ears.palmL = [-1, 0, 0.15]; ears.palmR = [1, 0, 0.15];
+    ears.hL = EAR(1, -0.01 * press); ears.hR = EAR(-1, -0.01 * press); ears.curl = [0.25, 0.25]; ears.head = [0.08 - 0.1 * press, 0.05 * Math.sin(s * 5) * press, 0.04 * press]; ears.spine = [0.02, 0, 0]; ears.elbow = [0.55, -0.85, 0.45]; ears.palmL = [-1, 0, 0.15]; ears.palmR = [1, 0, 0.15];
     pose = mix(st, ears, up); if (up > 0.02) pose.elbow = ears.elbow; if (up > 0.5) { pose.palmL = ears.palmL; pose.palmR = ears.palmR; }
     pose = mix(pose, POSE.glide(0.75, -1), sstep(5.05, 5.5, s));
     face = faceMix(FACE.neutral, FACE.focus, sstep(4.6, 5.3, s));
@@ -49,7 +49,7 @@ function segA(s: number): Perf {
     const gl = POSE.glide(0.22, 1), k = sstep(A.land, A.land + 0.09, s) * (1 - sstep(A.land + 0.12, A.land + 0.75, s));
     pose = mix(mix(POSE.reach(), gl, sstep(A.land, A.land + 0.3, s)), POSE.land(), k);
     pose = mix(pose, POSE.brake(), win(s, 14.1, 15.2, 0.4)); pose = mix(pose, POSE.stand(), sstep(15.0, 15.6, s));
-    const off = win(s, 12.55, 13.25, 0.3); if (off > 0) { const e = POSE.glide(0.15, 1); e.hL = EAR(1, -0.07 - 0.08 * sstep(12.9, 13.3, s)); e.hR = EAR(-1, -0.07 - 0.08 * sstep(12.9, 13.3, s)); e.curl = [0.3, 0.3]; e.palmL = [-1, 0, 0.15]; e.palmR = [1, 0, 0.15]; pose = mix(pose, e, off); pose.elbow = [0.9, -0.5, 0.3]; if (off > 0.5) { pose.palmL = e.palmL; pose.palmR = e.palmR; } }
+    const off = win(s, 12.55, 13.25, 0.3); if (off > 0) { const e = POSE.glide(0.15, 1); e.hL = EAR(1, -0.07 - 0.08 * sstep(12.9, 13.3, s)); e.hR = EAR(-1, -0.07 - 0.08 * sstep(12.9, 13.3, s)); e.curl = [0.3, 0.3]; e.palmL = [-1, 0, 0.15]; e.palmR = [1, 0, 0.15]; pose = mix(pose, e, off); pose.elbow = [0.55, -0.85, 0.45]; if (off > 0.5) { pose.palmL = e.palmL; pose.palmR = e.palmR; } }
     hp = sstep(12.85, 13.2, s);
     pose.head = [pose.head[0], headYawA(s), 0]; pose.spine = [pose.spine[0], headYawA(s) * 0.35, 0];
     face = faceMix(FACE.puzzled, FACE.surprised, win(s, 13.2, 14.4, 0.4));

@@ -9,7 +9,7 @@
     "typecheck": "tsc --noEmit",
     "stills": "node scripts/render.mjs --stills",
     "render:preview": "node scripts/render.mjs --scale 0.5 --blur 1 --out output/fast_forward_preview.mp4 --frames-dir output/frames_preview",
-    "render": "node scripts/render.mjs --out output/fast_forward_final.mp4",
+    "render": "node scripts/render.mjs --blur 4 --out output/fast_forward_final.mp4",
     "contact": "node scripts/contact.mjs"
   },
   "dependencies": {

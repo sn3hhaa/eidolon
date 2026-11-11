@@ -119,7 +119,7 @@ export function applyPose(P: Protagonist, root: Root, pose: SkPose, dist = 0) {
     return t;
   };
   for (const [side, h, hb, s, palm] of [['left', pose.hL, (pose as any).hLb, 1, pose.palmL], ['right', pose.hR, (pose as any).hRb, -1, pose.palmR]] as const) {
-    const t = hand(side, h); if (hb) t.lerp(hand(side, hb[0]), sstep(0, 1, hb[1]));
+    const t = hand(side, h); if (hb) { const w = sstep(0, 1, hb[1]); t.lerp(hand(side, hb[0]), w); t.addScaledVector(cz, 0.26 * Math.sin(Math.PI * w)).addScaledVector(cx, s * 0.05 * Math.sin(Math.PI * w)); }   // hands travel round the front of the body, never behind the shoulders
     if (h[3] !== 2) clear(t, s);
     const e = pose.elbow ?? [0.8, -0.5, -0.38];
     a.armIK(side, t, _v.set(s * e[0], e[1], e[2]).applyQuaternion(rq).clone());
