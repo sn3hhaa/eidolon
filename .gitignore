@@ -1,17 +1,10 @@
-# dependencies / build
 node_modules/
 dist/
 .vite/
-
-# generated film output (frame sequences, video exports, stills)
+# generated film output (frames, videos, stills)
 output/
-
-# Third-party reference artwork. These images are used locally as art-direction
-# reference only. Their redistribution rights are unverified, so they are NOT
-# committed. See docs/ASSET_CREDITS.md.
+# reference media supplied by the user: local art-direction reference only, not redistributed
 references/
-
-# misc
 *.log
 .DS_Store
 Thumbs.db
