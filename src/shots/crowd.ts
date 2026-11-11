@@ -4,24 +4,24 @@ import { Actor } from '../char/actor';
 import type { Ground } from '../world/ground';
 import { CURB, L } from '../world/layout';
 import { hash, sstep } from './util';
-import { TFZ } from './traffic';
-import { perform } from './perform';
+import { twAt } from './traffic';
+import { perform, A, C } from './perform';
 
 const MODELS = ['ped_a', 'ped_c', 'ped_d', 'ped_e', 'ped_f', 'ped_b'];
 const TINTS = ['#ffffff', '#ffd9b0', '#b9d8ff', '#ffc2cf', '#c9f0c0', '#fff0a8', '#d8c4ff', '#ffffff'];
 const E = Math.PI / 2, W = -Math.PI / 2, S = 0, N = Math.PI;
-interface Spec { m?: number; x: number; z: number; y?: number; yaw: number; clip: string; speed?: number; scale?: number; react?: boolean; phase?: number; once?: number; tag?: string }
+interface Spec { m?: number; x: number; z: number; y?: number; yaw: number; clip: string; speed?: number; scale?: number; react?: boolean; phase?: number; once?: number; tag?: string; ref?: number }
 interface Ped extends Spec { a: Actor; key: string }
 
 export async function buildCrowd(ground: Ground) {
   const deck = L.highwalk.y, specs: Spec[] = [
     // crossing Main St mid-block (she slaloms through them)
-    { x: -3.1, z: 3.5, y: 0, yaw: N, clip: 'Walk_Loop', speed: 1.3 }, { x: -1.2, z: 1.7, y: 0, yaw: S, clip: 'Walk_Formal_Loop', speed: 1.25 }, { x: -2.4, z: 0.0, y: 0, yaw: N, clip: 'Walk_Carry_Loop', speed: 1.1 }, { x: -0.6, z: -1.5, y: 0, yaw: S, clip: 'Walk_Loop', speed: 1.35 }, { x: -2.9, z: -3.2, y: 0, yaw: N, clip: 'Walk_Loop', speed: 1.3 },
+    { x: -3.1, z: 3.5, y: 0, yaw: N, clip: 'Walk_Loop', speed: 1.3, ref: C.slalom }, { x: -1.2, z: 1.7, y: 0, yaw: S, clip: 'Walk_Formal_Loop', speed: 1.25, ref: C.slalom }, { x: -2.4, z: 0.0, y: 0, yaw: N, clip: 'Walk_Carry_Loop', speed: 1.1, ref: C.slalom }, { x: -0.6, z: -1.5, y: 0, yaw: S, clip: 'Walk_Loop', speed: 1.35, ref: C.slalom }, { x: -2.9, z: -3.2, y: 0, yaw: N, clip: 'Walk_Loop', speed: 1.3, ref: C.slalom },
     // the court: the ball's owner and friends
-    { m: 3, x: -12.0, z: 7.4, yaw: N + 0.35, clip: 'OverhandThrow', once: 0.95, scale: 0.9, tag: 'owner' }, { m: 0, x: -15.5, z: 13.5, yaw: 0.9, clip: 'Idle_Talking_Loop' }, { m: 1, x: -9.5, z: 17, yaw: -2.2, clip: 'Idle_FoldArms_Loop' }, { m: 4, x: -14, z: 24.2, y: CURB + 0.42, yaw: S, clip: 'Jump_Loop' },
+    { m: 3, x: -12.0, z: 7.4, yaw: N + 0.35, clip: 'Idle_Loop', scale: 0.9, tag: 'owner' }, { m: 0, x: -15.5, z: 13.5, yaw: 0.9, clip: 'Idle_Talking_Loop' }, { m: 1, x: -9.5, z: 17, yaw: -2.2, clip: 'Idle_FoldArms_Loop' }, { m: 4, x: -14, z: 23.6, yaw: S, clip: 'Idle_Talking_Loop' },
     // splash plaza
     { m: 1, x: 14.0, z: 15.9, yaw: 1.0, clip: 'Jog_Fwd_Loop', speed: 2.4, scale: 0.78 }, { m: 2, x: 17.2, z: 21.3, yaw: S, clip: 'Idle_Loop' }, { m: 0, x: 27, z: 11, yaw: W, clip: 'Idle_TalkingPhone_Loop' },
-    { m: 3, x: 10.6, z: 7.6, yaw: W, clip: 'Hit_Knockback', once: 0.35, tag: 'grocer' },
+    { m: 3, x: -8.4, z: -7.7, yaw: E, clip: 'Walk_Carry_Loop', speed: 1.1 },
     // corners of the intersection
     { m: 5, x: 41.4, z: 9.4, yaw: N, clip: 'Idle_Loop' }, { m: 2, x: 57.6, z: -6.4, yaw: S, clip: 'Idle_TalkingPhone_Loop' }, { m: 0, x: 41.4, z: -6.6, yaw: S, clip: 'Idle_Loop' },
     // High Walk + terrace
@@ -55,14 +55,10 @@ export async function buildCrowd(ground: Ground) {
     group, peds, owner: peds.find((p) => p.tag === 'owner')!,
     /** react 0..1: how much the bystanders flagged `react` turn to watch `target` */
     set(tw: number, target?: THREE.Vector3, react = 0) {
-      const dt = tw - TFZ;
       for (const p of peds) {
-        const rw = p.react ? react : 0, key = `${tw.toFixed(4)}|${rw > 0 && target ? target.x.toFixed(2) + target.y.toFixed(2) + target.z.toFixed(2) + rw.toFixed(2) : ''}`;
-        if (key === p.key) continue; p.key = key;
-        const d = (p.speed ?? 0) * dt * (1 - rw * 0.9);
-        p.a.root.position.set(p.x + Math.sin(p.yaw) * d, p.y ?? CURB, p.z + Math.cos(p.yaw) * d); p.a.root.rotation.y = p.yaw;
-        if (p.tag === 'owner') { const idle = sstep(TFZ + 1.0, TFZ + 1.6, tw); p.a.pose([{ clip: p.clip, time: Math.max(0, dt + p.once!), weight: 1 - idle, loop: false }, { clip: 'Idle_Loop', time: tw, weight: idle }]); }
-        else p.a.pose([{ clip: p.clip, time: p.once !== undefined ? p.once + dt * 0.6 : tw * (p.speed ? 0.95 : 1) + p.phase!, weight: 1, loop: p.once === undefined }]);
+        const rw = p.react ? react : 0, L = 9, u = (p.speed ?? 0) * (tw - twAt(p.ref ?? A.freeze)) * (1 - rw * 0.9), m = (((u + L) % (4 * L)) + 4 * L) % (4 * L), fwd = m < 2 * L, d = fwd ? m - L : 3 * L - m, yaw = p.yaw + (fwd ? 0 : Math.PI);
+        p.a.root.position.set(p.x + Math.sin(p.yaw) * d, p.y ?? CURB, p.z + Math.cos(p.yaw) * d); p.a.root.rotation.y = yaw;
+        p.a.pose([{ clip: p.clip, time: tw * (p.speed ? 0.95 : 1) + p.phase!, weight: 1 }]);
         if (rw > 0 && target) { p.a.root.updateMatrixWorld(true); p.a.lookAt(_t.copy(target), 0.9 * rw, 0); }
         p.a.commit();
       }

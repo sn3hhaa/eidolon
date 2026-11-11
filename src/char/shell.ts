@@ -99,10 +99,10 @@ export function makeShell(body: Body, o: ShellOpts): THREE.BufferGeometry {
 
 export interface ClothUniforms { uLag: { value: THREE.Vector3 }; uFlutter: { value: number }; uTime: { value: number } }
 /** Toon material whose base colour comes from a GLSL `vec3 garment(vec3 p)` over the rest position. */
-export function garmentMaterial(glsl: string, u: ClothUniforms) {
+export function garmentMaterial(glsl: string, u: ClothUniforms, extra: Record<string, { value: unknown }> = {}) {
   const m = toon('#ffffff', { side: THREE.DoubleSide });
   m.onBeforeCompile = (sh) => {
-    Object.assign(sh.uniforms, u);
+    Object.assign(sh.uniforms, u, extra);
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute vec3 aRest; attribute float aLoose; varying vec3 vRest; uniform vec3 uLag; uniform float uFlutter, uTime;')
       .replace('#include <skinning_vertex>', '#include <skinning_vertex>\nvRest = aRest;\ntransformed += uLag * aLoose + objectNormal * (sin(dot(aRest, vec3(31., 47., 23.)) + uTime * 17.) + sin(aRest.y * 60. - uTime * 23.)) * uFlutter * aLoose;');
     sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vRest;\n' + glsl).replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.rgb = garment(vRest);');

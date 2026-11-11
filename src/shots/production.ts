@@ -1,5 +1,5 @@
 /**
- * NO SIGNAL — the production: one stage, one continuous performance, a list of shots with hard cuts.
+ * FAST FORWARD — the production: one stage, one continuous performance, a list of shots with hard cuts.
  * Three clocks:  t  film time (0‥90 s)  →  σ  story time (the girl's own, via each shot's mapping; slow motion lives here)
  *                →  tw world time (stops at TFZ when σ reaches A.freeze, creeps back and resumes around the stair jump).
  */
@@ -23,7 +23,8 @@ export const V = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z)
 
 // world time as a function of story time
 const resume = integrate([[A.freeze, 0], [E.notice + 0.8, 0], [E.notice + 1.6, 0.03], [E.run, 0.12], [F.take - 0.6, 0.3], [F.take, 0.4], [F.apex, 0.75], [F.apex + 0.25, 1], [400, 1]]);
-export const twOf = (s: number) => (s <= A.freeze ? TFZ + s - A.freeze : TFZ + resume(s));
+export const twOf = (s: number) => TFZ + s - A.freeze;   // the world runs with her the whole time
+void resume;
 export const trembleOf = (s: number) => sstep(E.start + 0.3, E.notice + 1.2, s) * (1 - sstep(E.run + 1.5, F.take, s));
 export const freezeOf = (s: number) => sstep(A.freeze + 1.0, A.freeze + 1.4, s) * (1 - sstep(E.run, F.apex + 0.3, s));
 export const pulseOf = (s: number) => (s > A.freeze && s < A.freeze + 1.45 ? 1.5 + 300 * Math.pow((s - A.freeze) / 1.45, 2.2) : -1);
@@ -43,13 +44,13 @@ export async function build(q: URLSearchParams): Promise<Production & { debug?: 
     debug: `shots ${shots.length} · ${shots.map((s) => `${s.name}@${s.t0}`).join(' ')}`,
     update(t: number, sh: Shot) {
       const d = sh as ShotDef, s = d.sig(t), pf = S.hero.apply(s);
-      const tw = d.tw ? d.tw(t) : twOf(s), tr = d.tremble ? d.tremble(t) : trembleOf(s);
+      const tw = twOf(s), tr = 0;
       S.traffic.set(tw, tr, t); S.nature.set(tw, s, tr, t, S.hero.head()); S.crowd.set(tw, S.hero.head(), reactOf(s));
       S.ground.setTime(tw); S.buildings.setTime(tw);
-      const sg = d.signals ? d.signals(t) : tr > 0.5 && hash(Math.floor(t * 13)) < 0.45 ? (['off', 'off'] as const) : (['g', 'r'] as const); S.ground.setSignals(sg[0], sg[1]);
-      look.freeze = d.freeze ? d.freeze(t) : freezeOf(s); look.pulseR = d.freeze ? -1 : pulseOf(s); look.pulseO.copy(pulseO);
-      look.fade = Math.min(sstep(0, 0.6, t), 1 - sstep(87.1, 88, t));
-      look.flash = !d.freeze && s > A.freeze && s < A.freeze + 0.6 ? 0.16 * Math.exp(-(s - A.freeze) / 0.1) : 0;
+      const ph = (((tw % 24) + 24) % 24), sg = ph < 10 ? (['g', 'r'] as const) : ph < 12 ? (['y', 'r'] as const) : ph < 22 ? (['r', 'g'] as const) : (['r', 'y'] as const); void hash; S.ground.setSignals(sg[0], sg[1]);
+      look.freeze = 0; look.pulseR = -1; void pulseO; void freezeOf; void pulseOf; void trembleOf;
+      look.fade = sstep(0, 0.5, t);
+      look.flash = 0;
       const ctx: Ctx = {
         t, u: (t - d.t0) / (d.t1 - d.t0), s, pf, H: pf.root.pos, head: S.hero.head(), chest: S.hero.chest(), S,
         at(pos, target, fov = 40, roll = 0) {
@@ -64,12 +65,11 @@ export async function build(q: URLSearchParams): Promise<Production & { debug?: 
       if (only) void 0;
     },
     overlay(t: number, g: CanvasRenderingContext2D) {
-      if (t < 88.05) return 0;
-      g.fillStyle = '#000'; g.fillRect(0, 0, 1920, 1080);
-      g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#f4efe6';
-      g.font = '700 132px "Bahnschrift", "Arial Narrow", "Segoe UI", Arial, sans-serif'; (g as any).letterSpacing = '26px'; g.fillText('NO SIGNAL', 960 + 13, 500);
-      g.font = 'italic 400 40px Georgia, "Times New Roman", serif'; (g as any).letterSpacing = '2px'; g.fillStyle = '#ff8a3a'; g.fillText('The world stopped. She didn’t.', 960, 618);
-      return Math.min(sstep(88.15, 88.7, t), 1 - sstep(89.75, 90, t) * 0.0);
+      const YEL = '#f6d21c', heavy = (px: number) => `900 ${px}px Impact, "Arial Black", "Bahnschrift", sans-serif`;
+      const put = (txt: string, x: number, y: number, px: number, col = YEL) => { g.font = heavy(px); g.fillStyle = 'rgba(10,12,30,0.55)'; g.fillText(txt, x + px * 0.035, y + px * 0.035); g.fillStyle = col; g.fillText(txt, x, y); };
+      g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+      if (t >= 0.7 && t < 3.6) { put('FABLE 5.2', 86, 330, 270); return 1; }
+      return 0;
     },
   };
 }

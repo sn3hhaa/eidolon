@@ -10,7 +10,7 @@
  *   G  80‥      catches her breath, looks back, headphones on, skates away
  */
 import * as THREE from 'three';
-import { POSE, mix, blend, type SkPose } from '../char/skater';
+import { POSE, mix, seq, type SkPose } from '../char/skater';
 import type { Face } from '../char/actor';
 import { Path, track, integrate, arc, win, sstep, lerp } from './util';
 import { L } from '../world/layout';
@@ -33,24 +33,23 @@ function segA(s: number): Perf {
   if (s < A.push) {
     // on the spot: rocking a skate, tugging the bag strap, settling the headphones
     const rock = Math.sin(s * 2.7) * win(s, -1, 2.3, 0.4), st = POSE.stand();
-    st.fL = [0.1, 0, 0.05 + 0.075 * rock, 0.1, 0, 0]; st.hip = [-0.025, -0.035, -0.01]; st.hR = [0.11, -0.13, 0.15, 0]; st.curl = [0.35, 0.7]; wheelL = 0.075 * rock;
-    const tug = win(s, 2.1, 3.2, 0.25); st.hR = [0.11 + 0.02 * tug, -0.13 - 0.07 * tug, 0.15, 0]; st.spine = [0.04, 0.06 * tug, 0]; st.head = [0.12 * tug, 0.1 * tug, 0];
+    st.fL = [0.1, 0, 0.05 + 0.075 * rock, 0.1, 0, 0]; st.hip = [-0.025, -0.035, -0.01]; st.hR = [0.1, -0.13, 0.2, 0]; st.curl = [0.35, 0.7]; st.elbow = [0.8, -0.6, -0.1]; wheelL = 0.075 * rock;
+    const tug = win(s, 2.1, 3.2, 0.25); st.hR = [0.1 + 0.02 * tug, -0.13 - 0.07 * tug, 0.2, 0]; st.spine = [0.04, 0.06 * tug, 0]; st.head = [0.12 * tug, 0.1 * tug, 0];
     const up = win(s, 3.9, 4.95, 0.42), press = win(s, 4.2, 4.8, 0.12), ears = POSE.stand();
-    ears.hL = EAR(1, -0.01 * press); ears.hR = EAR(-1, -0.01 * press); ears.curl = [0.25, 0.25]; ears.head = [0.08 - 0.1 * press, 0.05 * Math.sin(s * 5) * press, 0.04 * press]; ears.spine = [0.02, 0, 0]; ears.elbow = [0.9, -0.25, -0.35];
-    pose = mix(st, ears, up); if (up > 0.02) pose.elbow = ears.elbow;
+    ears.hL = EAR(1, -0.01 * press); ears.hR = EAR(-1, -0.01 * press); ears.curl = [0.25, 0.25]; ears.head = [0.08 - 0.1 * press, 0.05 * Math.sin(s * 5) * press, 0.04 * press]; ears.spine = [0.02, 0, 0]; ears.elbow = [0.9, -0.5, 0.3]; ears.palmL = [-1, 0, 0.15]; ears.palmR = [1, 0, 0.15];
+    pose = mix(st, ears, up); if (up > 0.02) pose.elbow = ears.elbow; if (up > 0.5) { pose.palmL = ears.palmL; pose.palmR = ears.palmR; }
     pose = mix(pose, POSE.glide(0.75, -1), sstep(5.05, 5.5, s));
     face = faceMix(FACE.neutral, FACE.focus, sstep(4.6, 5.3, s));
   } else if (s < A.take - 0.5) {
     pose = mix(POSE.glide(0.75, -1), POSE.stride(cadA(s), track([[5.5, 1], [8, 1], [10, 0.8]])(s)), sstep(5.5, 5.75, s));
   } else if (s < A.land) {
-    const st = POSE.stride(cadA(s), 0.8);
-    pose = blend([[st, 1 - sstep(A.take - 0.5, A.take - 0.3, s)], [POSE.tuck(), win(s, A.take - 0.34, A.take - 0.1, 0.12)], [POSE.launch(), win(s, A.take - 0.04, A.take + 0.06, 0.07)], [POSE.air(1), win(s, A.take + 0.2, A.land - 0.2, 0.12)], [POSE.reach(), sstep(A.land - 0.2, A.land - 0.04, s)]]);
+    pose = seq([[A.take - 0.5, () => POSE.stride(cadA(s), 0.8)], [A.take - 0.2, POSE.tuck()], [A.take + 0.02, POSE.launch()], [A.take + 0.28, POSE.air(1)], [A.land - 0.22, POSE.air(1)], [A.land - 0.03, POSE.reach()]], s);
     face = s > A.freeze ? faceMix(FACE.focus, FACE.puzzled, sstep(A.freeze + 0.1, A.land, s)) : FACE.effort;
   } else {
     const gl = POSE.glide(0.22, 1), k = sstep(A.land, A.land + 0.09, s) * (1 - sstep(A.land + 0.12, A.land + 0.75, s));
     pose = mix(mix(POSE.reach(), gl, sstep(A.land, A.land + 0.3, s)), POSE.land(), k);
     pose = mix(pose, POSE.brake(), win(s, 14.1, 15.2, 0.4)); pose = mix(pose, POSE.stand(), sstep(15.0, 15.6, s));
-    const off = win(s, 12.55, 13.25, 0.3); if (off > 0) { const e = POSE.glide(0.15, 1); e.hL = EAR(1, -0.07 - 0.08 * sstep(12.9, 13.3, s)); e.hR = EAR(-1, -0.07 - 0.08 * sstep(12.9, 13.3, s)); e.curl = [0.3, 0.3]; pose = mix(pose, e, off); pose.elbow = [0.9, -0.25, -0.35]; }
+    const off = win(s, 12.55, 13.25, 0.3); if (off > 0) { const e = POSE.glide(0.15, 1); e.hL = EAR(1, -0.07 - 0.08 * sstep(12.9, 13.3, s)); e.hR = EAR(-1, -0.07 - 0.08 * sstep(12.9, 13.3, s)); e.curl = [0.3, 0.3]; e.palmL = [-1, 0, 0.15]; e.palmR = [1, 0, 0.15]; pose = mix(pose, e, off); pose.elbow = [0.9, -0.5, 0.3]; if (off > 0.5) { pose.palmL = e.palmL; pose.palmR = e.palmR; } }
     hp = sstep(12.85, 13.2, s);
     pose.head = [pose.head[0], headYawA(s), 0]; pose.spine = [pose.spine[0], headYawA(s) * 0.35, 0];
     face = faceMix(FACE.puzzled, FACE.surprised, win(s, 13.2, 14.4, 0.4));
@@ -69,7 +68,7 @@ function segB(s: number): Perf {
   const look = track([[15.6, 0.3], [16.3, -0.7], [17.0, -0.5], [17.4, 0.5]])(s);
   if (s < 17.5) { pose.head = [0, look, 0]; pose.spine = [0.04, look * 0.4, 0]; }
   const reach = sstep(19.5, 20.55, s) * (1 - sstep(21.0, 22.0, s)), poke = win(s, 20.5, 20.7, 0.08), rp = POSE.stand();
-  rp.hR = [BALL.x - 0.05, BALL.y - 0.09 - 0.02 * poke, BALL.z - 0.1, 2]; rp.curl = [0.35, 0.05]; rp.spine = [0.06, -0.12, 0]; rp.hip = [0, -0.02, 0.03]; rp.elbow = [0.5, -0.8, -0.2];
+  rp.hR = [BALL.x - 0.05, BALL.y - 0.09 - 0.02 * poke, BALL.z - 0.1, 2]; rp.curl = [0.35, 0.05]; rp.spine = [0.06, -0.12, 0]; rp.hip = [0, -0.02, 0.03]; rp.elbow = [0.5, -0.8, -0.2]; rp.palmR = [0, -1, 0.2];
   pose = mix(pose, rp, reach); if (reach > 0.02) pose.elbow = rp.elbow;
   pose = mix(pose, POSE.glide(0.7, -1), sstep(23.0, 23.5, s));
   const face = s < 17.3 ? FACE.puzzled : s < 20.6 ? faceMix(FACE.puzzled, FACE.surprised, sstep(17.3, 17.8, s) * 0.6) : faceMix(FACE.surprised, FACE.mischief, sstep(21.1, 21.9, s));

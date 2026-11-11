@@ -30,7 +30,8 @@ export async function buildHero(): Promise<Hero> {
     const pf = perform(s);
     applyPose(P, pf.root, pf.pose, pf.dist);
     if (pf.wheelL !== undefined) for (const w of P.skates.left.wheels) w.rotation.x += pf.wheelL / 0.034;
-    if (pf.look) a.lookAt(pf.look, pf.lookW ?? 0.7); else a.eyes(0, 0);
+    if (pf.look) a.lookAt(pf.look, pf.lookW ?? 0.7);
+    else { const lean = pf.root.spin ? 0 : -(pf.root.roll ?? 0); a.rot('neck', 0, lean * 0.4, 0); a.rot('head', 0, lean * 0.45, -lean * 0.2); a.eyes(THREE.MathUtils.clamp(lean * 0.7, -0.4, 0.4), 0); }   // she looks into her turns
     a.face({ ...pf.face, blink: Math.max(pf.face.blink ?? 0, blink(s) * (pf.face.happy && pf.face.happy > 0.7 ? 0 : 1)) });
     hpOn.visible = pf.hp < 0.5; hpNeck.visible = !hpOn.visible;
     a.commit();

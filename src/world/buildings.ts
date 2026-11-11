@@ -1,5 +1,5 @@
 /**
- * NO SIGNAL — buildings, trees and the backdrop ring (static set dressing on the building lots).
+ * FAST FORWARD — buildings, trees and the backdrop ring (static set dressing on the building lots).
  * Ground, street furniture, stunt geometry, promenade and sea live in ./ground.ts.
  */
 import * as THREE from 'three';

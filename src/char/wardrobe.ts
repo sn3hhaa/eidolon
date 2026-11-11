@@ -9,6 +9,7 @@ import { toon } from '../engine/look';
 import { Actor } from './actor';
 import { readBody, cutBody, makeShell, garmentMaterial, shellMesh, type ClothUniforms } from './shell';
 import { makeSkate, SKATE_LIFT, type Skate } from './skates';
+import { transplantHair } from './hair';
 
 const ss = (a: number, b: number, x: number) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -19,6 +20,7 @@ export const PALETTE = { cobalt: '#1c4ed8', orange: '#ff7a1a', navy: '#16224f', 
 const HEM = 0.8, CUFF = 0.49, NECK = 1.335, WAIST = 0.96, ANKLE = 0.17;
 
 const JACKET_GLSL = `
+uniform sampler2D uArt;
 vec3 garment(vec3 p){
   vec3 cob = ${lin(PALETTE.cobalt)}, org = ${lin(PALETTE.orange)}, nav = ${lin(PALETTE.navy)}, crm = ${lin(PALETTE.cream)};
   float ax = abs(p.x); vec3 c = cob;
@@ -28,13 +30,11 @@ vec3 garment(vec3 p){
   if (ax < .215) { c = mix(c, org, step(0., d) * step(d, .032)); c = mix(c, crm, step(.04, d) * step(d, .049)); }
   if (p.z > 0. && ax < .0065 && p.y < 1.36) c = crm * .82;                // zip
   if (p.z > 0. && ax > .095 && ax < .15 && abs(p.y - (.99 - (ax - .095) * .9)) < .004) c = nav; // pocket welts
-  if (p.z < 0. && ax < .2) {                                              // back print: a crossed-out signal
-    vec2 q = p.xy - vec2(0., 1.0); float r = length(q), a = atan(q.x, q.y);
-    float arcs = step(abs(a), .82) * (step(abs(r - .04), .0075) + step(abs(r - .068), .0075) + step(abs(r - .096), .0075)) + step(r, .013);
-    c = mix(c, crm, clamp(arcs, 0., 1.));
-    vec2 n = normalize(vec2(.72, -.7)); vec2 e = q - vec2(0., .05);
-    c = mix(c, org, step(abs(dot(e, n)), .0075) * step(abs(dot(e, vec2(-n.y, n.x))), .1));
+  if (p.z < 0. && ax < .2) {                                              // back piece (painted art, see jacketArt)
+    vec2 uv = vec2((.19 - p.x) / .38, (p.y - .845) / .38);
+    if (uv.x > 0. && uv.x < 1. && uv.y > 0. && uv.y < 1.) { vec4 art = texture2D(uArt, uv); c = mix(c, art.rgb, art.a); }
   }
+  if (p.z > 0.) { float r = length(p.xy - vec2(.105, 1.25)); c = mix(c, crm, step(r, .034)); c = mix(c, org, step(r, .027)); c = mix(c, nav, step(r, .012)); }   // chest badge
   if (p.y < ${(HEM + 0.002).toFixed(3)}) { c = nav; c = mix(c, org, step(.76, p.y) * step(p.y, .776)); }      // rib hem
   if (ax > ${(CUFF + 0.002).toFixed(3)}) { c = nav; c = mix(c, org, step(.512, ax) * step(ax, .524)); }       // rib cuffs
   if (p.y > ${(NECK + 0.004).toFixed(3)} && ax < .13) c = mix(cob, org, step(1.398, p.y));                    // collar, orange lip
@@ -49,6 +49,22 @@ vec3 garment(vec3 p){
   if (p.y < ${(ANKLE + 0.002).toFixed(3)}) c = crm * .8;                  // hem
   return c;
 }`;
+
+/** Back piece of the jacket: stacked lettering, a bolt and stars, painted once on a canvas. */
+function jacketArt() {
+  const c = document.createElement('canvas'); c.width = c.height = 1024; const g = c.getContext('2d')!;
+  g.translate(512, 512); g.transform(1, -0.1, 0, 1, 0, 0); g.textAlign = 'center'; g.textBaseline = 'middle';
+  const word = (txt: string, y: number, size: number) => { g.font = `900 ${size}px Impact, "Arial Black", sans-serif`; g.fillStyle = PALETTE.orange; g.fillText(txt, 14, y + 14); g.fillStyle = PALETTE.cream; g.fillText(txt, 0, y); };
+  word('FAST', -235, 330); word('FORWARD', 40, 235);
+  g.fillStyle = PALETTE.orange; for (const x of [-60, 60]) { g.beginPath(); g.moveTo(x - 50, -470); g.lineTo(x + 50, -415); g.lineTo(x - 50, -360); g.closePath(); g.fill(); }
+  g.fillStyle = PALETTE.orange; g.fillRect(-380, 195, 760, 34); g.fillStyle = PALETTE.cream; g.fillRect(-380, 245, 760, 12);
+  g.fillStyle = PALETTE.cream; g.font = '900 96px Impact, "Arial Black", sans-serif'; g.fillText('SKATE CLUB  ·  EST. 05', 0, 330);
+  const bolt = (x: number, y: number, k: number, col: string) => { g.fillStyle = col; g.beginPath(); for (const [px, py] of [[20, -110], [-55, 15], [-5, 15], [-30, 110], [60, -25], [8, -25]]) g.lineTo(x + px * k, y + py * k); g.closePath(); g.fill(); };
+  bolt(330, -250, 1.5, PALETTE.cream); bolt(322, -258, 1.5, PALETTE.orange);
+  const star = (x: number, y: number, r: number) => { g.fillStyle = PALETTE.cream; g.beginPath(); for (let i = 0; i < 10; i++) { const a = (i * Math.PI) / 5 - Math.PI / 2, rr = i % 2 ? r * 0.45 : r; g.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); } g.closePath(); g.fill(); };
+  star(-360, -330, 46); star(-290, -400, 28); star(-400, -420, 20);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
+}
 
 export interface Protagonist { actor: Actor; skates: { left: Skate; right: Skate }; cloth: ClothUniforms; lift: number }
 
@@ -79,7 +95,7 @@ export async function buildProtagonist(file: string): Promise<Protagonist> {
       { where: (c) => c.y > 1.3 && Math.abs(c.x) < 0.1, axis: [0, 1, 0], rings: [[0.028, 1.13], [0.07, 1.2], [0.074, 1.1], [0.03, 0.98]] },
     ],
   });
-  shellMesh(body, jacket, garmentMaterial(JACKET_GLSL, cloth));
+  shellMesh(body, jacket, garmentMaterial(JACKET_GLSL, cloth, { uArt: { value: jacketArt() } }));
 
   const legAxis = (y: number, sx: number): [number, number] => (y > 0.518 ? [sx * lerp(0.057, 0.079, ss(0.518, 0.87, y)), lerp(-0.004, 0.002, ss(0.518, 0.87, y))] : [sx * lerp(0.046, 0.057, ss(0.103, 0.518, y)), lerp(-0.025, -0.004, ss(0.103, 0.518, y))]);
   const trousers = makeShell(body, {
@@ -115,6 +131,8 @@ export async function buildProtagonist(file: string): Promise<Protagonist> {
   }
   const skates = { left: makeSkate(1), right: makeSkate(-1) };
   actor.attach('leftFoot', skates.left.group); actor.attach('rightFoot', skates.right.group);
+  // hairstyle: a short tousled cut fitted from another CC0 avatar, rigid on the head (no spring simulation to misbehave)
+  await transplantHair(actor, '/assets/cast/ped_e.vrm', '#4a4c72');
   actor.lift = SKATE_LIFT;
   actor.raw.head.scale.setScalar(1.1);            // slightly larger head: younger, more stylized read
   return { actor, skates, cloth, lift: SKATE_LIFT };

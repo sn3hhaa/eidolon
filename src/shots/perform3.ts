@@ -1,6 +1,6 @@
 /** Performance segments E (time is returning), F (stair launch + landing) and G (ending). See perform.ts. */
 import * as THREE from 'three';
-import { POSE, mix, blend, type SkPose } from '../char/skater';
+import { POSE, mix, blend, seq, type SkPose } from '../char/skater';
 import { Path, track, integrate, arc, win, sstep, lerp } from './util';
 import { CURB, L } from '../world/layout';
 import { FACE, faceMix, rootOn, EAR, type Perf } from './perfbase';
@@ -19,14 +19,14 @@ export function segE(s: number): Perf {
     const yawBack = -2.35, yaw = lerp(0, yawBack, sstep(E.notice, E.notice + 1.1, s)) * (1 - sstep(E.turn, RUN - 0.15, s));
     const br = Math.sin((s - E.start) * 5.2), tired = 1 - sstep(E.start + 0.4, E.notice + 0.3, s);
     let pose: SkPose = POSE.stand(); pose.spine = [0.05 + 0.3 * tired + 0.03 * br, 0, 0]; pose.hip = [0, -0.04 - 0.1 * tired, 0]; pose.head = [-0.15 * tired, 0, 0];
-    pose.hL = lerp3([0.07, -0.41, 0.03, 0], [0.1, -0.3, 0.16, 0], tired); pose.hR = lerp3([-0.07, -0.41, 0.03, 0], [-0.1, -0.3, 0.16, 0], tired);
+    pose.hL = lerp3([0.17, -0.43, 0.05, 0], [0.2, -0.32, 0.2, 0], tired); pose.hR = lerp3([-0.17, -0.43, 0.05, 0], [-0.2, -0.32, 0.2, 0], tired);
     pose = mix(pose, POSE.glide(0.85, -1), sstep(RUN - 0.4, RUN, s));
     const face = s < E.notice ? faceMix(FACE.grin, FACE.breath, 0.5) : faceMix(faceMix(FACE.puzzled, FACE.uhoh, sstep(E.notice + 1.6, E.turn - 0.3, s)), FACE.mischief, sstep(E.turn, RUN, s));
     return { root: { pos: new THREE.Vector3(D.endPos.x, L.highwalk.y, D.endPos.y), yaw }, pose, dist: 0, speed: 0, face, hp: 1, look: s > E.notice - 0.2 && s < E.turn ? LOOK_BACK : undefined, lookW: 0.6 };
   }
   const d = mE.dAt(s), v = mE.vAt(s), root = rootOn(pathE, d, v, L.highwalk.y, 0.6);
   const cad = integrate([[RUN, 1.2], [RUN + 2, 1.65], [80, 1.65]], 0.5)(s);
-  const pose = blend([[POSE.glide(0.85, -1), 1 - sstep(RUN, RUN + 0.25, s)], [POSE.stride(cad, 1), sstep(RUN, RUN + 0.25, s) * (1 - sstep(TAKE - 0.5, TAKE - 0.3, s))], [POSE.tuck(), win(s, TAKE - 0.36, TAKE - 0.09, 0.1)], [POSE.launch(), sstep(TAKE - 0.07, TAKE, s)]]);
+  const pose = seq([[RUN - 0.01, POSE.glide(0.85, -1)], [RUN + 0.28, () => POSE.stride(cad, 1)], [TAKE - 0.5, () => POSE.stride(cad, 1)], [TAKE - 0.2, POSE.tuck()], [TAKE, POSE.launch()]], s);
   return { root, pose, dist: d, speed: v, face: faceMix(FACE.effort, FACE.mischief, 0.5), hp: 1 };
 }
 const lerp3 = (a: number[], b: number[], t: number) => a.map((v, i) => lerp(v, b[i], t));
@@ -45,12 +45,10 @@ export function segF(s: number): Perf {
   root.spin = spin;
   if (air) root.tumble = new THREE.Quaternion().setFromEuler(new THREE.Euler(0.22 * Math.sin(u * Math.PI), 0, 0.3 * Math.sin(u * Math.PI)));
   const fakie = sstep(LAND + 0.25, LAND + 0.5, s) * (1 - sstep(F.revert, F.revert + 0.5, s)), back = POSE.glide(0.4, -1); back.hL = [0.36, -0.1, 0.02, 0]; back.hR = [-0.36, -0.12, 0.0, 0]; back.head = [-0.2, 0.8, 0]; back.spine = [0.3, 0.25, 0];
-  const coast = POSE.glide(0.12, 1); coast.hL = [0.12, -0.36, 0.02, 0]; coast.hR = [-0.12, -0.36, 0.02, 0];
-  const pose = blend([
-    [POSE.launch(), 1 - sstep(TAKE + 0.02, TAKE + 0.16, s)], [POSE.air(1), win(s, TAKE + 0.12, TAKE + 0.24, 0.08)], [POSE.grab(), win(s, TAKE + 0.24, LAND - 0.3, 0.1)],
-    [POSE.reach(), win(s, LAND - 0.26, LAND - 0.04, 0.09)], [POSE.land(), win(s, LAND + 0.03, LAND + 0.2, 0.12)], [back, fakie],
-    [POSE.glide(0.3, 1), win(s, F.revert + 0.5, F.revert + 1.6, 0.3)], [coast, sstep(F.revert + 1.4, F.revert + 2.2, s) * (1 - sstep(mF.end - 1.6, mF.end - 0.5, s))], [POSE.brake(), win(s, mF.end - 1.9, mF.end - 0.6, 0.4)], [POSE.stand(), sstep(mF.end - 0.7, mF.end, s)],
-  ]);
+  const coast = POSE.glide(0.12, 1); coast.hL = [0.19, -0.4, 0.06, 0]; coast.hR = [-0.19, -0.4, 0.06, 0];
+  const pose = seq([[TAKE, POSE.launch()], [TAKE + 0.2, POSE.air(1)], [TAKE + 0.38, POSE.grab()], [LAND - 0.3, POSE.grab()], [LAND - 0.05, POSE.reach()], [LAND + 0.14, POSE.land()], [LAND + 0.5, back], [F.revert, back],
+    [F.revert + 0.7, POSE.glide(0.3, 1)], [F.revert + 1.8, coast], [mF.end - 1.9, coast], [mF.end - 1.1, POSE.brake()], [mF.end - 0.1, POSE.stand()]], s);
+  void fakie;
   const face = air ? FACE.joy : faceMix(FACE.effort, FACE.grin, sstep(LAND + 0.2, LAND + 0.9, s));
   return { root, pose, dist: d, speed: v, face, hp: 1 };
 }
@@ -67,8 +65,8 @@ export function segG(s: number): Perf {
   const root = t > Gs.away ? rootOn(pathG, d, vG.rate(t), CURB) : { pos: new THREE.Vector3(G0.x, CURB, G0.y), yaw };
   const br = Math.sin(t * 5.6) * (1 - sstep(2.5, 6, t)), bent = 1 - sstep(Gs.up - 0.5, Gs.up + 0.5, t);
   let pose: SkPose = POSE.stand(); pose.spine = [0.05 + 0.5 * bent + 0.035 * br, 0, 0]; pose.hip = [0, -0.04 - 0.16 * bent + 0.006 * br, -0.05 * bent]; pose.head = [0.1 * bent, 0, 0];
-  if (bent > 0.01) { const k = POSE.stand(); k.hL = [0.14, 0.62, 0.13, 1]; k.hR = [-0.14, 0.62, 0.13, 1]; k.curl = [0.25, 0.25]; k.spine = pose.spine; k.hip = pose.hip; k.head = pose.head; pose = mix(pose, k, bent); }
-  const up = win(t, Gs.phones, Gs.on + 0.7, 0.45); if (up > 0) { const e = POSE.stand(); const dy = -0.14 * (1 - sstep(Gs.phones + 0.4, Gs.on, t)); e.hL = EAR(1, dy); e.hR = EAR(-1, dy); e.curl = [0.25, 0.25]; e.head = [0.05, 0, 0]; e.elbow = [0.9, -0.25, -0.35]; pose = mix(pose, e, up); pose.elbow = e.elbow; }
+  if (bent > 0.01) { const k = POSE.stand(); k.hL = [0.15, 0.66, 0.16, 1]; k.hR = [-0.15, 0.66, 0.16, 1]; k.curl = [0.25, 0.25]; k.palmL = [0, -1, 0.3]; k.palmR = [0, -1, 0.3]; k.elbow = [1, -0.2, -0.2]; k.spine = pose.spine; k.hip = pose.hip; k.head = pose.head; pose = mix(pose, k, bent); }
+  const up = win(t, Gs.phones, Gs.on + 0.7, 0.45); if (up > 0) { const e = POSE.stand(); const dy = -0.14 * (1 - sstep(Gs.phones + 0.4, Gs.on, t)); e.hL = EAR(1, dy); e.hR = EAR(-1, dy); e.curl = [0.25, 0.25]; e.head = [0.05, 0, 0]; e.elbow = [0.9, -0.5, 0.3]; e.palmL = [-1, 0, 0.15]; e.palmR = [1, 0, 0.15]; pose = mix(pose, e, up); pose.elbow = e.elbow; if (up > 0.5) { pose.palmL = e.palmL; pose.palmR = e.palmR; } }
   if (t > Gs.away - 0.5) pose = blend([[pose, 1 - sstep(Gs.away - 0.5, Gs.away, t)], [POSE.glide(0.7, -1), win(t, Gs.away - 0.4, Gs.away + 0.15, 0.2)], [POSE.stride(0.5 + (t - Gs.away) * 0.95, 0.45), sstep(Gs.away + 0.05, Gs.away + 0.4, t)]]);
   const face = t < Gs.up ? FACE.breath : t < Gs.phones ? faceMix(FACE.breath, FACE.smile, sstep(Gs.up, Gs.look + 0.6, t)) : faceMix(FACE.smile, { relaxed: 1 }, sstep(Gs.on, Gs.on + 0.6, t));
   return { root, pose, dist: d, speed: t > Gs.away ? vG.rate(t) : 0, face, hp: 1 - sstep(Gs.on - 0.25, Gs.on + 0.1, t), look: t > Gs.up + 0.3 && t < Gs.away - 1.2 ? CITY : undefined, lookW: 0.7 };

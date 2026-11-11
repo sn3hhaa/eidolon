@@ -1,6 +1,6 @@
 /** Performance segments C (frozen playground) and D (the impossible line). See perform.ts. */
 import * as THREE from 'three';
-import { POSE, mix, blend, type SkPose } from '../char/skater';
+import { POSE, mix, seq, type SkPose } from '../char/skater';
 import { Path, track, integrate, arc, win, sstep, lerp } from './util';
 import { CURB, L, bankY, bankSlope } from '../world/layout';
 import { FACE, faceMix, rootOn, timeAt, BALL, EAST, type Perf } from './perfbase';
@@ -30,10 +30,10 @@ export function segC(s: number): Perf {
   const cad = integrate([[23.5, 1.1], [26, 1.15], [60, 1.15]], 0.5)(s), strideW = (1 - sstep(0.07, 0.16, curv)) * (1 - back) * (1 - stop);
   let pose: SkPose = mix(POSE.glide(0.3 + 0.25 * sstep(0.1, 0.25, curv), 1), POSE.stride(cad, 0.55), strideW);
   pose = mix(POSE.glide(0.7, -1), pose, sstep(23.5, 23.8, s));
-  const duck = win(s, C.duck - 0.4, C.duck + 0.35, 0.3); if (duck > 0) { const dk = POSE.glide(1, 1); dk.hip = [0, -0.5, -0.1]; dk.spine = [0.95, 0, 0]; dk.head = [-0.95, 0.25, 0]; dk.hL = [0.2, -0.16, 0.2, 0]; dk.hR = [-0.2, -0.2, -0.16, 0]; pose = mix(pose, dk, duck); }
-  if (inHop || Math.abs(s - C.hop) < 0.4) pose = blend([[pose, 1 - win(s, C.hop - 0.3, C.hop + 0.3, 0.1)], [POSE.tuck(), win(s, C.hop - 0.3, C.hop - 0.17, 0.08) * 0.6], [POSE.air(0.6), win(s, C.hop - 0.12, C.hop + 0.12, 0.06)], [POSE.land(), win(s, C.hop + 0.16, C.hop + 0.24, 0.1) * 0.45]]);
+  const duck = win(s, C.duck - 0.4, C.duck + 0.35, 0.3); if (duck > 0) { const dk = POSE.glide(1, 1); dk.hip = [0, -0.5, -0.1]; dk.spine = [0.95, 0, 0]; dk.head = [-0.95, 0.25, 0]; dk.hL = [0.22, -0.16, 0.24, 0]; dk.hR = [-0.24, -0.2, 0.12, 0]; pose = mix(pose, dk, duck); }
+  const hk = win(s, C.hop - 0.3, C.hop + 0.26, 0.12); if (hk > 0) pose = mix(pose, seq([[C.hop - 0.34, POSE.glide(0.6, 1)], [C.hop - 0.17, mix(POSE.glide(0.6, 1), POSE.tuck(), 0.6)], [C.hop - 0.08, POSE.launch()], [C.hop + 0.04, POSE.air(0.6)], [C.hop + 0.16, POSE.reach()], [C.hop + 0.26, mix(POSE.glide(0.4, 1), POSE.land(), 0.45)]], s), hk);
   const wide = Math.max(win(s, C.pad - 0.9, C.pad + 0.9, 0.5), back * 0.8); if (wide > 0) { const w = POSE.glide(0.12, 1); w.hL = [0.4, 0.06 + 0.05 * Math.sin(s * 3), 0.02, 0]; w.hR = [-0.4, 0.04 - 0.05 * Math.sin(s * 3), 0.02, 0]; w.curl = [0.05, 0.05]; w.head = [-0.28, back * 0.9, 0]; w.spine = [-0.02, back * 0.3, 0]; pose = mix(pose, w, wide); }
-  const sp = win(s, C.spin - 0.7, C.spin + 0.7, 0.25); if (sp > 0) { const p = POSE.glide(0.35, 1); p.hL = [0.02, -0.2, 0.2, 0]; p.hR = [-0.02, -0.2, 0.2, 0]; p.fL = [0.07, 0, 0.14, 0.5, 0, 0]; p.fR = [-0.07, 0, -0.14, 0.5, 0, 0]; pose = mix(pose, p, sp); }
+  const sp = win(s, C.spin - 0.7, C.spin + 0.7, 0.25); if (sp > 0) { const p = POSE.glide(0.35, 1); p.hL = [0.1, -0.16, 0.26, 0]; p.hR = [-0.1, -0.2, 0.26, 0]; p.fL = [0.07, 0, 0.14, 0.5, 0, 0]; p.fR = [-0.07, 0, -0.14, 0.5, 0, 0]; pose = mix(pose, p, sp); }
   if (stop > 0) { const hs = POSE.glide(0.75, 1); hs.fL = [0.2, 0, 0.05, 0.1, 0, 0.25]; hs.fR = [-0.2, 0, 0, -0.1, 0, 0.25]; hs.hL = [0.34, -0.12, 0.1, 0]; hs.hR = [-0.34, -0.14, 0.02, 0]; pose = mix(pose, mix(hs, POSE.stand(), sstep(tDec + 1.0, tDec + 1.5, s)), sstep(tDec, tDec + 0.5, s)); }
   const face = faceMix(faceMix(FACE.mischief, FACE.grin, sstep(25, 26.5, s)), FACE.joy, Math.max(wide, sp * 0.8));
   return { root, pose, dist: 49 + d, speed: v, face: s > tDec + 0.8 ? faceMix(face, FACE.surprised, sstep(tDec + 0.9, tDec + 1.4, s) * 0.5) : face, hp: 1 };
@@ -75,19 +75,15 @@ export function segD(s: number): Perf {
   const cad = integrate([[46, 1.2], [48, 1.6], [60, 1.6]], 0.5)(s), st = POSE.stride(cad, 1), gl = POSE.glide(0.45, 1);
   const gr = POSE.grind(); gr.hip[0] = 0.03 * Math.sin(s * 9); gr.hL[1] += 0.05 * Math.sin(s * 7); gr.hR[1] -= 0.05 * Math.sin(s * 7); gr.head = [-0.2, -1.0, 0]; gr.spine = [0.34, -0.35, 0];
   const grab = POSE.grab();
-  const pose = blend([
-    [st, 1 - sstep(D.ledgeTake - 0.42, D.ledgeTake - 0.24, s)],
-    [POSE.tuck(), win(s, D.ledgeTake - 0.3, D.ledgeTake - 0.08, 0.1) + win(s, D.bankTop - 0.4, D.bankTop - 0.1, 0.12) * 0.7 + win(s, D.roofOff - 0.12, D.roofOff - 0.04, 0.06)],
-    [POSE.launch(), win(s, D.ledgeTake - 0.03, D.ledgeTake + 0.05, 0.06) + win(s, D.bankTop - 0.04, D.bankTop + 0.08, 0.07) + win(s, D.roofOff - 0.02, D.roofOff + 0.07, 0.06)],
-    [POSE.air(0.7), win(s, D.ledgeTake + 0.1, D.ledgeOn - 0.1, 0.07) + win(s, D.ledgeOff + 0.06, D.bank0 - 0.1, 0.07)],
-    [gr, win(s, D.ledgeOn - 0.03, D.ledgeOff, 0.08)],
-    [gl, win(s, D.bank0 + 0.2, D.bankTop - 0.45, 0.12) + sstep(D.deck + 0.45, D.deck + 1.1, s)],
-    [POSE.air(1), win(s, D.bankTop + 0.22, D.roofOn - 0.25, 0.12)],
-    [POSE.reach(), win(s, D.roofOn - 0.2, D.roofOn - 0.03, 0.08) + win(s, D.deck - 0.2, D.deck - 0.03, 0.08)],
-    [POSE.land(), win(s, D.bank0, D.bank0 + 0.14, 0.08) * 0.8 + win(s, D.roofOn + 0.02, D.roofOff - 0.14, 0.06) + win(s, D.deck + 0.03, D.deck + 0.3, 0.1)],
-    [grab, win(s, D.roofOff + 0.2, D.deck - 0.27, 0.1)],
-  ]);
-  const cheer = win(s, D.deck + 1.5, D.deck + 2.6, 0.35); if (cheer > 0) { const c = POSE.glide(0.1, 1); c.hL = [0.2, 0.36, 0.08, 0]; c.hR = [-0.2, 0.36, 0.08, 0]; c.curl = [0.9, 0.9]; c.head = [-0.3, 0, 0]; c.spine = [-0.08, 0, 0]; Object.assign(pose, mix(pose, c, cheer)); }
+  const landLite = mix(gl, POSE.land(), 0.7);
+  const pose = seq([
+    [D.ledgeTake - 0.45, () => st], [D.ledgeTake - 0.18, POSE.tuck()], [D.ledgeTake + 0.02, POSE.launch()], [D.ledgeTake + 0.2, POSE.air(0.7)],
+    [D.ledgeOn + 0.03, gr], [D.ledgeOff - 0.02, gr], [D.ledgeOff + 0.16, POSE.air(0.7)], [D.bank0 + 0.06, landLite], [D.bank0 + 0.35, gl], [D.bankTop - 0.45, gl],
+    [D.bankTop - 0.2, mix(gl, POSE.tuck(), 0.75)], [D.bankTop + 0.03, POSE.launch()], [D.bankTop + 0.32, POSE.air(1)], [D.roofOn - 0.24, POSE.air(1)], [D.roofOn - 0.05, POSE.reach()],
+    [D.roofOn + 0.09, POSE.land()], [D.roofOff - 0.09, POSE.tuck()], [D.roofOff + 0.03, POSE.launch()], [D.roofOff + 0.28, grab], [D.deck - 0.27, grab], [D.deck - 0.05, POSE.reach()],
+    [D.deck + 0.14, POSE.land()], [D.deck + 0.9, gl], [D.end, gl],
+  ], s);
+  const cheer = win(s, D.deck + 1.5, D.deck + 2.6, 0.35); if (cheer > 0) { const c = POSE.glide(0.1, 1); c.hL = [0.2, 0.36, 0.08, 0]; c.hR = [-0.2, 0.36, 0.08, 0]; c.curl = [0.9, 0.9]; c.palmL = [0, 0, 1]; c.palmR = [0, 0, 1]; c.head = [-0.3, 0, 0]; c.spine = [-0.08, 0, 0]; Object.assign(pose, mix(pose, c, cheer)); }
   const out = mix(pose, POSE.stand(), sstep(D.end - 1.3, D.end - 0.1, s));
   const air = (s > D.bankTop && s < D.roofOn) || (s > D.roofOff && s < D.deck);
   const face = s < D.ledgeTake ? FACE.effort : air ? FACE.joy : s > D.deck + 0.6 ? faceMix(FACE.joy, FACE.grin, sstep(D.deck + 2.6, D.deck + 4, s)) : FACE.focus;

@@ -1,5 +1,5 @@
 /**
- * NO SIGNAL — static ground set: streets, plazas, stunt geometry, High Walk, terrace, stairs,
+ * FAST FORWARD — static ground set: streets, plazas, stunt geometry, High Walk, terrace, stairs,
  * promenade, sea and street furniture. Geometry follows src/world/layout.ts exactly.
  */
 import * as THREE from 'three';

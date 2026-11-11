@@ -1,15 +1,15 @@
 {
-  "name": "no-signal",
+  "name": "fast-forward",
   "version": "1.0.0",
   "private": true,
-  "description": "NO SIGNAL — a 90-second stylized animated action short (Three.js renderer, CC0 rigs + animation data).",
+  "description": "FAST FORWARD — a 90-second stylized animated action short (Three.js renderer, CC0 rigs + animation data).",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "typecheck": "tsc --noEmit",
     "stills": "node scripts/render.mjs --stills",
-    "render:preview": "node scripts/render.mjs --scale 0.5 --blur 1 --out output/no_signal_preview.mp4 --frames-dir output/frames_preview",
-    "render": "node scripts/render.mjs --out output/no_signal_final.mp4",
+    "render:preview": "node scripts/render.mjs --scale 0.5 --blur 1 --out output/fast_forward_preview.mp4 --frames-dir output/frames_preview",
+    "render": "node scripts/render.mjs --out output/fast_forward_final.mp4",
     "contact": "node scripts/contact.mjs"
   },
   "dependencies": {

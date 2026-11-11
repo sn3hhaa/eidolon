@@ -1,4 +1,4 @@
-# NO SIGNAL — production notes
+# FAST FORWARD — production notes
 
 What was actually done, with which tools, what was tried, what went wrong, and what is still weak.
 
@@ -23,7 +23,7 @@ The reference (a ~72 s cel-shaded anime-film-style skateboard short) was studied
 sheet for craft: hard two-tone shading with coloured shadows, ink outlines, saturated sunlit
 streets under a deep blue sky with cumulus, very low wide-angle cameras close to wheels and shoes,
 close-ups of the face, hard cuts. None of its story, characters, wardrobe, locations or shots is
-reproduced: NO SIGNAL has a different protagonist, vehicle (inline skates), premise (time stops),
+reproduced: FAST FORWARD has a different protagonist, vehicle (inline skates), premise (time stops),
 city (a waterfront town) and shot list.
 
 ## Three clocks
@@ -86,10 +86,36 @@ low on the side she arrives from and high on the side she leaves. A debug pass
 11. **GPU.** Headless Chrome defaulted to the integrated GPU; `--force_high_performance_gpu`
     moved rendering to the RTX 3050.
 
+12. **Review round (user notes on the first preview).** Reported: twisted/backward hands, hands sinking
+    into the jacket, arms held behind the body, hair flying and changing shape, jerky legs, the
+    crossed-out-signal back print, and the title treatment. Fixes, all in place rather than rebuilt:
+    - *Hands:* the wrist is now solved explicitly — fingers continue the forearm, the palm turns toward
+      the body (or down when the arm is out wide), and the forearm takes the twist; hand targets are
+      pushed out of an elliptical torso volume and thigh capsules so they cannot enter the jacket or
+      trousers; rest positions moved forward and outward; elbows point out, not back.
+    - *Hair:* the base avatar's bob was driven by spring bones that whipped around at 10 m/s and
+      flipped strands in close-ups. It is replaced by a short tousled cut taken from another CC0
+      avatar, fitted to her head and rigid.
+    - *Legs and transitions:* the stride leg is a periodic spline (no velocity jumps); action
+      transitions (tuck → launch → air → land…) run through a Catmull-Rom key sequence instead of
+      overlapping weight windows, which had gaps where the pose snapped back to the stride for a frame.
+    - *Jacket:* back print replaced by painted lettering, bolt and stars; chest badge added.
+    - *Titles:* "MADE WITH FABLE 5.2" over the opening shots in the reference's bold-yellow manner;
+      FAST FORWARD typed over the final shot; the black end card is gone.
+
+13. **Second review round: no freeze, new name.** At the user's direction the time-stop premise was
+    dropped: the world now runs with her for the whole film. Every car, walker, bird flock and the bus
+    is timed to the story moment she meets it (the bus arrives under her as she leaves the bank ramp;
+    crosswalk walkers pace back and forth so she can slalom them; pigeons burst up as she ducks).
+    The basketball is passed to her and tapped back. The freeze wave, tremble and end title were
+    removed; only "FABLE 5.2" appears, over the opening. The film was renamed FAST FORWARD and the
+    old name removed from the repo and jacket. Parts of the docs above describe the earlier freeze
+    design (the "three clocks" section: tw now simply equals σ plus a constant).
+
 ## Known limitations (honest list)
 
 - Cloth is not simulated. Jacket and trousers get a velocity/acceleration "lag" term and a speed
-  flutter in the vertex shader; hair uses the avatar's spring bones. Deep crouches still let the
+  flutter in the vertex shader; the hair is rigid on the head (no secondary motion). Deep crouches still let the
   thighs push into the jacket hem.
 - The crowd uses the sample avatars' own outfits, which are more costume-like than the protagonist's
   streetwear, and several pedestrians are instances of the same six models.
@@ -104,9 +130,9 @@ low on the side she arrives from and high on the side she leaves. A debug pass
 ```
 npm install
 npm run stills -- 1,13.05,69.4        # single frames → output/stills/
-npm run render:preview                # 960×540 preview → output/no_signal_preview.mp4
-npm run render                        # 1920×1080, 2700 frames → output/no_signal_final.mp4
-npm run contact                       # output/no_signal_contact_sheet.jpg
+npm run render:preview                # 960×540 preview → output/fast_forward_preview.mp4
+npm run render                        # 1920×1080, 2700 frames → output/fast_forward_final.mp4
+npm run contact                       # output/fast_forward_contact_sheet.jpg
 ```
 
 Rendering is resumable (existing frames are kept unless `--clean`). Requires Chrome or Edge, a

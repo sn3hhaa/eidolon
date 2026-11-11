@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /**
- * NO SIGNAL offline renderer: drives the film in a headless GPU browser at exact
+ * FAST FORWARD offline renderer: drives the film in a headless GPU browser at exact
  * timestamps (frame n ↔ t = n / 30) and encodes with FFmpeg.
  *
  *   node scripts/render.mjs --stills 1,2.5,9.8 [--tag name] [--scale 0.5] [--blur 1] [--query debug=char]
- *   node scripts/render.mjs --out output/no_signal_final.mp4 [--start s --end s] [--scale 1] [--blur 6]
- *   node scripts/render.mjs --encode-only --out output/no_signal_final.mp4
+ *   node scripts/render.mjs --out output/fast_forward_final.mp4 [--start s --end s] [--scale 1] [--blur 6]
+ *   node scripts/render.mjs --encode-only --out output/fast_forward_final.mp4
  * Rendering is resumable: frames already in --frames-dir are kept unless --clean.
  */
 import { spawn } from 'node:child_process';
@@ -17,7 +17,7 @@ import { chromium } from 'playwright';
 import { createServer } from 'vite';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const a = { scale: 1, crf: 16, out: 'output/no_signal_final.mp4', framesDir: 'output/frames', dir: 'output/stills', tag: 'still', blur: undefined, query: '' };
+const a = { scale: 1, crf: 16, out: 'output/fast_forward_final.mp4', framesDir: 'output/frames', dir: 'output/stills', tag: 'still', blur: undefined, query: '' };
 const argv = process.argv.slice(2);
 for (let i = 0; i < argv.length; i++) {
   const k = argv[i], next = () => argv[++i];
@@ -99,7 +99,7 @@ async function main() {
   if (a.encodeOnly) return encode(30);
   const film = await open();
   const { info } = film;
-  console.log(`NO SIGNAL scale ${a.scale} · GPU: ${info.gpu}${info.debug ? '\n' + info.debug : ''}`);
+  console.log(`FAST FORWARD scale ${a.scale} · GPU: ${info.gpu}${info.debug ? '\n' + info.debug : ''}`);
   try {
     if (a.stills) {
       const dir = path.resolve(ROOT, a.dir);

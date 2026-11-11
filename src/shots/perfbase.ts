@@ -17,7 +17,7 @@ export interface Perf {
 }
 export const EAST = Math.PI / 2;
 /** ear-level hand target in the root frame (standing) */
-export const EAR = (s: number, dy = 0): number[] => [s * 0.165, 1.37 + SKATE_LIFT + dy, 0.02, 1];
+export const EAR = (s: number, dy = 0): number[] => [s * 0.15, 1.34 + SKATE_LIFT + dy, -0.02, 1];
 /** Expression presets, calibrated on the avatar: 'relaxed' is the open-eyed smile, 'happy' at 1 the eyes-shut laugh (partial 'happy' reads sleepy, 'angry' draws a forehead shadow — both avoided). */
 export const FACE = {
   neutral: {} as Face, focus: {} as Face, smile: { relaxed: 0.6 } as Face, grin: { relaxed: 1, ee: 0.25 } as Face,
@@ -27,5 +27,5 @@ export const FACE = {
 export const faceMix = (a: Face, b: Face, t: number): Face => { const o: any = {}; for (const k of new Set([...Object.keys(a), ...Object.keys(b)])) o[k] = lerp((a as any)[k] ?? 0, (b as any)[k] ?? 0, t); return o; };
 /** Solve s(t) = target for monotone s on [lo, hi]. */
 export const timeAt = (s: (t: number) => number, target: number, lo: number, hi: number) => { for (let i = 0; i < 40; i++) { const m = (lo + hi) / 2; if (s(m) < target) lo = m; else hi = m; } return (lo + hi) / 2; };
-export const rootOn = (path: Path, s: number, v: number, y: number, lean = 0.75): Root => { const p = path.at(s); return { pos: new THREE.Vector3(p.x, y, p.y), yaw: path.yaw(s), roll: -Math.atan((v * v * path.curv(s)) / G) * lean }; };
+export const rootOn = (path: Path, s: number, v: number, y: number, lean = 0.75): Root => { const p = path.at(s); return { pos: new THREE.Vector3(p.x, y, p.y), yaw: path.yaw(s), roll: Math.max(-0.42, Math.min(0.42, -Math.atan((v * v * path.curv(s)) / G) * lean)) }; };
 
