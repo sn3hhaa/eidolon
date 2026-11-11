@@ -10,3 +10,6 @@ references/
 Thumbs.db
 .env
 .env.*
+
+# user-supplied soundtrack (commercial recording): local only, never committed
+audio/
