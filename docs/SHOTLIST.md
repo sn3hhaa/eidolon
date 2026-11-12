@@ -1,6 +1,6 @@
 # FAST FORWARD — shot list
 
-41 shots, hard cuts. "FABLE 5.2" is set over the opening shots (0.7–3.6 s); there is no end title and no black screen. The world never stops: an earlier time-freeze version was dropped at the user's direction, and some shot names below still carry its labels in code. Times are film time. "σ" marks slow motion (story time runs slower than film
+41 shots, hard cuts. "FABLE 5.2" animates in over the opening shots (bottom-right, 0.6–3.9 s); there is no end title. Some shot names in code still carry labels from an earlier time-freeze version.
 time). Source: `src/shots/shots1.ts`, `src/shots/shots2.ts`.
 
 | # | Time | Shot | Camera |

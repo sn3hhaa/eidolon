@@ -61,5 +61,5 @@ encoding. Blender is installed on the production machine and was permitted, but 
 
 ## Fonts
 
-The end title uses system fonts available to headless Chrome on Windows (Bahnschrift, Georgia).
+The opening title uses a system font available to headless Chrome on Windows (Impact).
 No font files are distributed.
